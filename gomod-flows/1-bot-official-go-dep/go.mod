@@ -1,6 +1,6 @@
 module github.com/pmg.tools/berty-bot-experiments/gomod-flows/1-bot-official-go-dep
 
-go 1.19
+go 1.18
 
 replace (
 	bazil.org/fuse => bazil.org/fuse v0.0.0-20200117225306-7b5117fecadc // specific version for iOS building
