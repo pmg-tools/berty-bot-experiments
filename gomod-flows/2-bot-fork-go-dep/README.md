@@ -2,7 +2,9 @@
 
 ## About
 
-A bot using official's Berty lib.
+A bot using a Berty fork.
+
+https://github.com/pmg-tools/berty/releases/tag/v2.424242.0-tmp
 
 ## How
 

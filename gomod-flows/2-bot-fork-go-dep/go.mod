@@ -1,9 +1,13 @@
-module github.com/pmg.tools/berty-bot-experiments/gomod-flows/1-bot-official-go-dep
+module github.com/pmg.tools/berty-bot-experiments/gomod-flows/2-bot-fork-go-dep
 
 go 1.18
 
 replace (
+	// EO HERE
+
 	bazil.org/fuse => bazil.org/fuse v0.0.0-20200117225306-7b5117fecadc // specific version for iOS building
+	// HERE
+	berty.tech/berty/v2 => github.com/pmg-tools/berty/v2 v2.424242.0-tmp
 	github.com/agl/ed25519 => github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // latest commit before the author shutdown the repo; see https://github.com/golang/go/issues/20504
 	github.com/libp2p/go-libp2p-rendezvous => github.com/berty/go-libp2p-rendezvous v0.0.0-20211013085524-09965cd64781 // use berty fork of go-libp2p-rendezvous with sqlcipher support
 	github.com/lucas-clemente/quic-go => github.com/lucas-clemente/quic-go v0.25.0
