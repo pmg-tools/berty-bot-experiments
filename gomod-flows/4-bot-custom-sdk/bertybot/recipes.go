@@ -6,7 +6,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/internal/logutil"
 	"berty.tech/berty/v2/go/pkg/messengertypes"
 )
 
@@ -62,10 +61,9 @@ func WelcomeMessageRecipe(text string) Recipe {
 				return
 			}
 			time.Sleep(time.Second) // I don't know why, but this is required :/
-			ctx.Logger.Info("sending welcome message",
-				logutil.PrivateString("text", text),
-				logutil.PrivateString("conversation", ctx.ConversationPK),
-			)
+			ctx.Logger.Info("sending welcome message")// logutil.PrivateString("text", text),
+			// logutil.PrivateString("conversation", ctx.ConversationPK),
+
 			err := ctx.ReplyString(text)
 			if err != nil {
 				ctx.Logger.Error("reply failed", zap.Error(err))
@@ -106,7 +104,9 @@ func EchoRecipe(prefix string) Recipe {
 			}
 
 			msg := prefix + ctx.UserMessage
-			ctx.Logger.Info("echo replying", logutil.PrivateString("text", msg), logutil.PrivateString("conversation", ctx.ConversationPK))
+			ctx.Logger.Info("echo replying")// logutil.PrivateString("text", msg),
+			// logutil.PrivateString("conversation", ctx.ConversationPK),
+
 			err := ctx.ReplyString(msg)
 			if err != nil {
 				ctx.Logger.Error("reply failed", zap.Error(err))

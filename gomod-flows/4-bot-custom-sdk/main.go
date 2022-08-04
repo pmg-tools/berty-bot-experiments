@@ -10,12 +10,12 @@ import (
 	"runtime"
 	"syscall"
 
-	"berty.tech/berty/v2/go/pkg/bertybot"
 	"berty.tech/berty/v2/go/pkg/bertyversion"
 	"berty.tech/berty/v2/go/pkg/messengertypes"
 	qrterminal "github.com/mdp/qrterminal/v3"
 	"github.com/oklog/run"
 	"github.com/peterbourgon/ff/v3"
+	"github.com/pmg.tools/berty-bot-experiments/gomod-flows/3-bot-rel-clone-go-dep/bertybot"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"

@@ -1,18 +1,31 @@
-# 3-bot-rel-clone-go-dep
+# 4-bot-custom-sdk
 
 ## About
 
-A bot using a cloned berty/berty repo somewhere on the file system.
+This one is using the official `berty/berty` repo for most libs, excepted the bot SDK which is copied with the project.
 
-This method allows:
-* patching berty/berty in real time.
-* staying in the berty/berty repo to make opening a PR very easy.
+This method makes it ultra easy to make changes in the SDK, easy to show it to anyone (no need to make secondary clone or checkout something).
+But, it makes it harder to open PRs against the original repo.
 
-Drawback -> "works for me, but not for others" (require people to make more steps)
+---
+
+FYI, the lib was duplicated like this:
+
+```sh
+# copy all the deps' sources in vendor/ dir
+go mod vendor
+
+# copy the interesting library
+cp -rf vendor/berty.tech/berty/v2/go/pkg/bertybot .
+
+# cleanup vendor dir
+rm -rf vendor
+
+# monkey patch files that requires berty's internals
+$EDITOR ./bertybot/recipes.go
+```
 
 ## How
 
-1. `git clone https://github.com/berty/berty ../berty-clone`
-2. Patch it.
-3. `make start-mini-companion`
-4. `make run`
+1. `make start-mini-companion`
+2. `make run`
