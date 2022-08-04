@@ -1,4 +1,4 @@
-BERTY_PORT ?= 4297
+BERTY_PORT ?= 4296
 BERTY_GROUP ?= https://berty.tech/id\#group/8ejngpAxnMPPKdsY8DA3jkWA2G4dU3tdh5qFk6Ym9g7Q5Y5zEcPR6tx4wUxjLvqN8aLySh2r7L6UNRXfNXokC9UoN1M5J38bQE5RsEe8orupzr83E1XjHn3y4cTBsVogHm2BFo84pWSGsdWxMVhtkXH3s4yDtuRZkYdB1BVqUvwi6B1s8G9pKSmT1vPMmiMUV3MHBe6pXxVnP3j7Jx5heZrkQeFQWPBeXVQ18ZysQmiroEtZjLPoncx8zSVBqkWMPATqu6JEuhcXN7qPVcN7cxGzxhoo/name=PMG+-+bot+experiments2
 
 run: tidy
