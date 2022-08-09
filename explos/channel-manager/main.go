@@ -36,10 +36,9 @@ func main() {
 }
 
 var opts struct { // nolint:maligned
-	Debug            bool
-	BertyNodeAddr    string
-	rootLogger       *zap.Logger
-	BertyGroupInvite string
+	Debug         bool
+	BertyNodeAddr string
+	rootLogger    *zap.Logger
 }
 
 func mainRun(args []string) error {
@@ -51,9 +50,8 @@ func mainRun(args []string) error {
 		ShortHelp:  "More info on https://github.com/pmg-tools/berty-bot-experiments.",
 		FlagSetBuilder: func(fs *flag.FlagSet) {
 			// opts.BertyNodeAddr = ""
-			fs.BoolVar(&opts.Debug, "debug", true, "debug mode")
+			fs.BoolVar(&opts.Debug, "debug", false, "debug mode")
 			fs.StringVar(&opts.BertyNodeAddr, "berty-node-addr", "127.0.0.1:9091", "Berty node address")
-			fs.StringVar(&opts.BertyGroupInvite, "berty-group-invite", "", "Berty group invite")
 		},
 		Exec:      doRoot,
 		FFOptions: []ff.Option{ff.WithEnvVarPrefix(name)},
@@ -144,6 +142,13 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			bertybot.WithCommand("version", "show version", versionCommand),
 			bertybot.WithRecipe(bertybot.AutoAcceptIncomingContactRequestRecipe()),
 			bertybot.WithRecipe(bertybot.AutoAcceptIncomingGroupInviteRecipe()),
+			bertybot.WithRecipe(bertybot.WelcomeMessageRecipe("Hello dear peroquet !")),
+			bertybot.WithCommand("ping", "ping", func(ctx bertybot.Context) {
+				if ctx.IsReplay || !ctx.IsNew {
+					return
+				}
+				_ = ctx.ReplyString("pong")
+			}),
 
 			// CHAN COMMANDS
 			bertybot.WithCommand("add-channel", "add a channel", bertyBotAddChannel(dbA, mutex)),
@@ -168,18 +173,6 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 		)
 		if opts.Debug {
 			qrterminal.GenerateHalfBlock(bot.BertyIDURL(), qrterminal.L, os.Stdout)
-		}
-
-		if opts.BertyGroupInvite == "" {
-			return bot.Start(ctx)
-		}
-
-		req := &messengertypes.ConversationJoin_Request{Link: opts.BertyGroupInvite}
-		_, err = client.ConversationJoin(ctx, req)
-		if err != nil {
-			logger.Warn("conversation join failed", zap.Error(err))
-		} else {
-			logger.Info("group joined")
 		}
 
 		return bot.Start(ctx)

@@ -21,6 +21,10 @@ type database interface {
 func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Context) {
 	return func(ctx bertybot.Context) {
 		// TODO: upgrade sdk to avoid it
+		if ctx.IsReplay || !ctx.IsNew {
+			return
+		}
+
 		channelID, err := func(ctx bertybot.Context) (string, error) {
 			if len(ctx.CommandArgs) == 2 {
 				return ctx.CommandArgs[1], nil
@@ -31,6 +35,7 @@ func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 			_ = ctx.ReplyString(err.Error())
 			return
 		}
+		//
 
 		mutex.Lock()
 		err = db.AddChannel(channelID)
@@ -45,6 +50,11 @@ func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 
 func bertyBotListChannels(db database) func(ctx bertybot.Context) {
 	return func(ctx bertybot.Context) {
+		// TODO: upgrade sdk to avoid it
+		if ctx.IsReplay || !ctx.IsNew {
+			return
+		}
+
 		channels, err := db.ListChannels()
 		if err != nil {
 			_ = ctx.ReplyString("error: " + err.Error())
@@ -57,6 +67,10 @@ func bertyBotListChannels(db database) func(ctx bertybot.Context) {
 func bertyBotAddMessage(db database, mutex *sync.Mutex) func(ctx bertybot.Context) {
 	return func(ctx bertybot.Context) {
 		// TODO: upgrade sdk to avoid it
+		if ctx.IsReplay || !ctx.IsNew {
+			return
+		}
+
 		channelID, messageText, err := func(ctx bertybot.Context) (string, string, error) {
 			if len(ctx.CommandArgs) == 3 {
 				return ctx.CommandArgs[1], ctx.CommandArgs[2], nil
@@ -72,6 +86,7 @@ func bertyBotAddMessage(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 			_ = ctx.ReplyString("error: channel does not exist")
 			return
 		}
+		//
 
 		msg := message{
 			Text:      messageText,
@@ -94,6 +109,10 @@ func FormatMessage(msg message) string {
 func bertyBotGetMessages(db database) func(ctx bertybot.Context) {
 	return func(ctx bertybot.Context) {
 		// TODO: upgrade sdk to avoid it
+		if ctx.IsReplay || !ctx.IsNew {
+			return
+		}
+
 		channelID, err := func(ctx bertybot.Context) (string, error) {
 			if len(ctx.CommandArgs) == 2 {
 				return ctx.CommandArgs[1], nil
@@ -104,6 +123,7 @@ func bertyBotGetMessages(db database) func(ctx bertybot.Context) {
 			_ = ctx.ReplyString(err.Error())
 			return
 		}
+		//
 
 		if !db.ChannelExist(channelID) {
 			_ = ctx.ReplyString("error: channel does not exist")
