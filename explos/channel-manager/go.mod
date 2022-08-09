@@ -1,4 +1,4 @@
-module github.com/pmg.tools/berty-bot-experiments/gomod-flows/3-bot-rel-clone-go-dep
+module github.com/pmg.tools/berty-bot-experiments/explos/channel-manager
 
 go 1.18
 
