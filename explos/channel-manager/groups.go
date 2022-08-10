@@ -6,7 +6,6 @@ import (
 )
 
 func bertyBotCreateGroup(name string) (error, *messengertypes.BertyLink) {
-	// TODO: upgrade sdk to avoid it
 	g, _, err := bertyprotocol.NewGroupMultiMember()
 	if err != nil {
 		return err, nil
