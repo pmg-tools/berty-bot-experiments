@@ -30,7 +30,7 @@ func bertyBotAddWorkspace(db database, mutex *sync.Mutex) func(ctx bertybot.Cont
 			if len(ctx.CommandArgs) == 2 {
 				return ctx.CommandArgs[1], nil
 			}
-			return "", errors.New("missing workspace ID")
+			return "", errors.New("bad arguments")
 		}(ctx)
 		if err != nil {
 			_ = ctx.ReplyString(err.Error())
@@ -57,7 +57,7 @@ func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 			if len(ctx.CommandArgs) == 3 {
 				return ctx.CommandArgs[1], ctx.CommandArgs[2], nil
 			}
-			return "", "", errors.New("missing channel ID")
+			return "", "", errors.New("bad arguments")
 		}(ctx)
 		if err != nil {
 			_ = ctx.ReplyString(err.Error())
@@ -100,10 +100,10 @@ func bertyBotListChannels(db database) func(ctx bertybot.Context) {
 			if len(ctx.CommandArgs) == 2 {
 				return ctx.CommandArgs[1], nil
 			}
-			return "", errors.New("missing workspace ID")
+			return "", errors.New("bad arguments")
 		}(ctx)
 		if err != nil {
-			_ = ctx.ReplyString(err.Error())
+			_ = ctx.ReplyString("error: " + err.Error())
 			return
 		}
 		//
