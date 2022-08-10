@@ -6,6 +6,9 @@ run: tidy
 start-mini-companion:
 	berty daemon --node.listeners=/ip4/127.0.0.1/tcp/$(BERTY_PORT)/grpc --p2p.ipfs-api-listeners /ip4/127.0.0.1/tcp/1$(BERTY_PORT)
 
+mini:
+	berty mini
+
 install: tidy fmt
 	go install .
 

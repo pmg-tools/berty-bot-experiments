@@ -2,59 +2,76 @@ package main
 
 import (
 	"errors"
-	"time"
+	"fmt"
 )
-
-type message struct {
-	Text      string
-	ChannelID string
-	hour      time.Time
-}
 
 /*type channel struct {
 	ID   string
 	discordLink string
 }*/
 
+type Channel map[string]string
+
 type mockDb struct {
-	Channels map[string][]message
+	Workspaces map[string]Channel
 	// TODO: add a way to link channels to discord
 	// Channels map[channel][]message
 }
 
-func (m *mockDb) AddChannel(channelID string) error {
-	if m.Channels == nil {
-		m.Channels = make(map[string][]message)
+func (m *mockDb) AddWorkspace(workspaceID string) {
+	if m.Workspaces == nil {
+		m.Workspaces = make(map[string]Channel)
 	}
-	if m.Channels[channelID] == nil {
-		m.Channels[channelID] = make([]message, 0)
-		return nil
+	if m.Workspaces[workspaceID] == nil {
+		m.Workspaces[workspaceID] = make(map[string]string)
 	}
-	return errors.New("channel already exists")
 }
 
-func (m *mockDb) ListChannels() ([]string, error) {
-	if m.Channels == nil {
+func (m *mockDb) AddChannel(workspaceID string, channelID string) {
+	if m.Workspaces == nil || m.Workspaces[workspaceID] == nil {
+		m.AddWorkspace(workspaceID)
+	}
+	if m.Workspaces[workspaceID][channelID] == "" {
+		m.Workspaces[workspaceID][channelID] = channelID
+	}
+}
+
+func (m *mockDb) WorkspaceExist(workspaceID string) bool {
+	return m.Workspaces[workspaceID] != nil
+}
+
+func (m *mockDb) ChannelExist(workspaceID string, channelID string) bool {
+	if m.Workspaces == nil {
+		return false
+	}
+	return m.Workspaces[workspaceID][channelID] != ""
+}
+
+func (m *mockDb) ListWorkspaces() ([]string, error) {
+	if m.Workspaces == nil {
+		return nil, errors.New("no workspaces")
+	}
+	var workspaces []string
+	for workspaceID := range m.Workspaces {
+		workspaces = append(workspaces, workspaceID)
+	}
+	return workspaces, nil
+}
+
+func (m *mockDb) ListChannels(workspaceID string) ([]string, error) {
+	if m.Workspaces == nil {
+		return nil, errors.New("no workspaces")
+	}
+	if m.Workspaces[workspaceID] == nil {
 		return nil, errors.New("no channels")
 	}
 	var channels []string
-	for channelID := range m.Channels {
+
+	// debug
+	fmt.Println(m.Workspaces[workspaceID])
+
+	for channelID := range m.Workspaces[workspaceID] {
 		channels = append(channels, channelID)
 	}
 	return channels, nil
-}
-
-func (m *mockDb) ChannelExist(channelID string) bool {
-	if m.Channels == nil {
-		return false
-	}
-	return m.Channels[channelID] != nil
-}
-
-func (m *mockDb) AddMessage(channelID string, msg message) {
-	m.Channels[channelID] = append(m.Channels[channelID], msg)
-}
-
-func (m *mockDb) GetChannelMessages(channelID string) []message {
-	return m.Channels[channelID]
 }

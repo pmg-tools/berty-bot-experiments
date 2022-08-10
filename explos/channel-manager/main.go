@@ -151,10 +151,12 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			}),
 
 			// CHAN COMMANDS
+			bertybot.WithCommand("add-work", "create a channel", bertyBotAddWorkspace(dbA, mutex)),
 			bertybot.WithCommand("add-channel", "add a channel", bertyBotAddChannel(dbA, mutex)),
+
+			bertybot.WithCommand("list-workspaces", "list workspaces", bertyBotListWorkspaces(dbA)),
 			bertybot.WithCommand("list-channels", "list channels", bertyBotListChannels(dbA)),
-			bertybot.WithCommand("add-message", "add a message", bertyBotAddMessage(dbA, mutex)),
-			bertybot.WithCommand("get-messages", "get messages", bertyBotGetMessages(dbA)),
+
 			//
 
 			bertybot.WithMessengerClient(client),
