@@ -40,7 +40,7 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 	var workspace Workspace
 	_ = db.Where("name = ?", workspaceName).First(&workspace)
 	if workspace.Name == "" {
-		return false
+		s.AddWorkspace(workspaceName)
 	}
 
 	db.Create(&Channel{
