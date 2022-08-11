@@ -78,16 +78,16 @@ func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 			return
 		}
 
-		mutex.Lock()
-		db.AddChannel(workspaceName, channelName, "")
-
-		_, err = bertyBotCreateGroup(channelName)
+		link, err := bertyBotCreateGroup(channelName)
 		if err != nil {
 			_ = ctx.ReplyString(err.Error())
 		}
+
+		mutex.Lock()
+		db.AddChannel(workspaceName, channelName, link)
 		mutex.Unlock()
 
-		_ = ctx.ReplyString("channel added")
+		_ = ctx.ReplyString(link)
 	}
 }
 
