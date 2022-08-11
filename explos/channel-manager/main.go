@@ -5,6 +5,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	sqlite "github.com/flyingtime/gorm-sqlcipher"
+	"gorm.io/gorm"
 	"math/rand"
 	"os"
 	"runtime"
@@ -14,6 +16,7 @@ import (
 	"berty.tech/berty/v2/go/pkg/bertybot"
 	"berty.tech/berty/v2/go/pkg/bertyversion"
 	"berty.tech/berty/v2/go/pkg/messengertypes"
+
 	qrterminal "github.com/mdp/qrterminal/v3"
 	"github.com/oklog/run"
 	"github.com/peterbourgon/ff/v3"
@@ -119,7 +122,22 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 
 	// berty bot
 	g.Add(func() error {
-		var dbA = &mockDb{}
+		//var dbA = &mockDb{}
+		var dbA, err = func() (*sqlLite, error) {
+			db, err := gorm.Open(sqlite.Open("test.db"))
+			if err != nil {
+				return nil, err
+			}
+
+			s := &sqlLite{db: db}
+			err = s.db.AutoMigrate(&User{}, &Workspace{}, &Channel{})
+			if err != nil {
+				return nil, err
+			}
+
+			return s, nil
+		}()
+
 		var mutex = &sync.Mutex{}
 
 		versionCommand := func(ctx bertybot.Context) {
@@ -156,7 +174,6 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 
 			bertybot.WithCommand("list-workspaces", "list workspaces", bertyBotListWorkspaces(dbA)),
 			bertybot.WithCommand("list-channels", "list channels", bertyBotListChannels(dbA)),
-
 			//
 
 			bertybot.WithMessengerClient(client),
