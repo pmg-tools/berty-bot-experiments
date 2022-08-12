@@ -168,7 +168,7 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 				}
 				_ = ctx.ReplyString("pong")
 			}),
-			bertybot.WithCommand("refresh", "refresh", refreshUser(opts.apiAdr)),
+			bertybot.WithCommand("refresh", "refresh", refreshUser(dbA, opts.apiAdr)),
 
 			// CHAN COMMANDS
 			bertybot.WithCommand("add-work", "create a channel", bertyBotAddWorkspace(dbA, mutex)),

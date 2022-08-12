@@ -2,12 +2,20 @@ package main
 
 import (
 	"berty.tech/berty/v2/go/pkg/bertybot"
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
 )
 
-func refreshUser(api string) func(ctx bertybot.Context) {
+type RefreshData struct {
+	Access []struct {
+		Workspace string   `json:"workspace"`
+		Channel   []string `json:"channel"`
+	} `json:"access"`
+}
+
+func refreshUser(db database, api string) func(ctx bertybot.Context) {
 	return func(ctx bertybot.Context) {
 		// TODO: upgrade sdk to avoid it
 		if ctx.IsReplay || !ctx.IsNew {
@@ -26,6 +34,7 @@ func refreshUser(api string) func(ctx bertybot.Context) {
 		}
 		//
 
+		var data RefreshData
 		client := http.Client{}
 		req, err := http.NewRequest("GET", api, nil)
 		if err != nil {
@@ -46,7 +55,17 @@ func refreshUser(api string) func(ctx bertybot.Context) {
 			return
 		}
 
-		_ = ctx.ReplyString(string(body))
-		_ = ctx.ReplyString("TEST")
+		err = json.Unmarshal(body, &data)
+		if err != nil {
+			return
+		}
+
+		var channels []Channel
+		for _, v := range data.Access {
+			channels = db.GetChannelsInvitation(v.Workspace, v.Channel)
+			for _, w := range channels {
+				_ = ctx.ReplyString(w.BertyLink)
+			}
+		}
 	}
 }

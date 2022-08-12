@@ -115,3 +115,13 @@ func (s sqlLite) ListChannels(workspaceName string) ([]string, error) {
 
 	return channelIDs, nil
 }
+
+func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []string) []Channel {
+
+	var workspace Workspace
+	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
+
+	var channels []Channel
+	_ = s.db.Where("wid = ? AND channel_name IN(?)", workspace.ID, channelsName).Find(&channels)
+	return channels
+}

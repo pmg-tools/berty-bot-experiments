@@ -18,6 +18,8 @@ type database interface {
 	WorkspaceExist(workspaceName string) bool
 	ChannelExist(workspaceName string, channelName string) bool
 
+	GetChannelsInvitation(workspaceName string, channelsName []string) []Channel
+
 	// debug functions
 	ListWorkspaces() ([]string, error)
 	ListChannels(workspaceName string) ([]string, error)
