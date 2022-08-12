@@ -41,6 +41,7 @@ func main() {
 var opts struct { // nolint:maligned
 	Debug         bool
 	BertyNodeAddr string
+	apiAdr        string
 	rootLogger    *zap.Logger
 }
 
@@ -55,6 +56,7 @@ func mainRun(args []string) error {
 			// opts.BertyNodeAddr = ""
 			fs.BoolVar(&opts.Debug, "debug", false, "debug mode")
 			fs.StringVar(&opts.BertyNodeAddr, "berty-node-addr", "127.0.0.1:9091", "Berty node address")
+			fs.StringVar(&opts.apiAdr, "api-adr", "http://127.0.0.1:8080/access", "Territori API address")
 		},
 		Exec:      doRoot,
 		FFOptions: []ff.Option{ff.WithEnvVarPrefix(name)},
@@ -167,6 +169,7 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 				}
 				_ = ctx.ReplyString("pong")
 			}),
+			bertybot.WithCommand("refresh", "refresh", refreshUser(opts.apiAdr)),
 
 			// CHAN COMMANDS
 			bertybot.WithCommand("add-work", "create a channel", bertyBotAddWorkspace(dbA, mutex)),
