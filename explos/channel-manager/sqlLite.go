@@ -5,13 +5,13 @@ import (
 )
 
 type Workspace struct {
-	gorm.Model
+	ID       uint `gorm:"primary_key"`
 	Name     string
 	Channels []Channel `gorm:"ForeignKey:Wid"`
 }
 
 type Channel struct {
-	gorm.Model
+	ID          uint `gorm:"primary_key"`
 	BertyLink   string
 	ChannelName string
 	Wid         uint
@@ -37,13 +37,16 @@ func (s sqlLite) AddUser(pubKey string) (ok bool) {
 
 func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroupLink string) (ok bool) {
 	db := s.db
+
 	var workspace Workspace
 	_ = db.Where("name = ?", workspaceName).First(&workspace)
 	if workspace.Name == "" {
-		return false
+		ws := &Workspace{Name: workspaceName}
+		db.Create(ws)
+		workspace.ID = ws.ID
 	}
 
-	db.Create(&Channel{
+	_ = db.Create(&Channel{
 		ChannelName: channelName,
 		BertyLink:   bertyGroupLink,
 		Wid:         workspace.ID,
@@ -54,9 +57,7 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 
 func (s sqlLite) AddWorkspace(workspaceName string) (ok bool) {
 	db := s.db
-	db.Create(&Workspace{
-		Name: workspaceName,
-	})
+	_ = db.Create(&Workspace{Name: workspaceName})
 
 	return true
 }
@@ -83,7 +84,7 @@ func (s sqlLite) ChannelExist(workspaceName string, channelName string) bool {
 
 func (s sqlLite) WorkspaceExist(workspaceName string) bool {
 	var workspace Workspace
-	_ = s.db.Where("Name = ?", workspaceName).First(&workspace)
+	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
 
 	return workspace.Name != ""
 }

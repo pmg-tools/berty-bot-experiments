@@ -3,6 +3,7 @@ package main
 import (
 	"berty.tech/berty/v2/go/pkg/bertybot"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 )
@@ -78,9 +79,10 @@ func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 			return
 		}
 
-		link, err := bertyBotCreateGroup(channelName)
+		link, err := bertyBotCreateGroup(fmt.Sprintf("%s/#%s", workspaceName, channelName))
 		if err != nil {
 			_ = ctx.ReplyString(err.Error())
+			return
 		}
 
 		mutex.Lock()
