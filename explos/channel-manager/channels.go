@@ -3,6 +3,7 @@ package main
 import (
 	"berty.tech/berty/v2/go/pkg/bertybot"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 )
@@ -132,5 +133,12 @@ func bertyBotListChannels(db database) func(ctx bertybot.Context) {
 			return
 		}
 		_ = ctx.ReplyString("channels: " + strings.Join(channels, ", "))
+	}
+}
+
+func bertyBotRefreshAll() func(ctx bertybot.Context) {
+	return func(ctx bertybot.Context) {
+		_ = ctx.ReplyString("Not implemented yet!")
+		fmt.Println("Not implemented yet!")
 	}
 }
