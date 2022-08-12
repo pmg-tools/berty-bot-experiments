@@ -1,6 +1,9 @@
 package main
 
 import (
+	"berty.tech/berty/v2/go/pkg/bertybot"
+	"berty.tech/berty/v2/go/pkg/bertyversion"
+	"berty.tech/berty/v2/go/pkg/messengertypes"
 	"context"
 	"errors"
 	"flag"
@@ -12,10 +15,6 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
-
-	"berty.tech/berty/v2/go/pkg/bertybot"
-	"berty.tech/berty/v2/go/pkg/bertyversion"
-	"berty.tech/berty/v2/go/pkg/messengertypes"
 
 	qrterminal "github.com/mdp/qrterminal/v3"
 	"github.com/oklog/run"
@@ -174,9 +173,9 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			// CHAN COMMANDS
 			bertybot.WithCommand("add-work", "create a channel", bertyBotAddWorkspace(dbA, mutex)),
 			bertybot.WithCommand("add-channel", "add a channel", bertyBotAddChannel(dbA, mutex)),
-
 			bertybot.WithCommand("list-workspaces", "list workspaces", bertyBotListWorkspaces(dbA)),
 			bertybot.WithCommand("list-channels", "list channels", bertyBotListChannels(dbA)),
+			bertybot.WithCommand("refresh-all", "refresh channels", bertyBotRefreshAll()),
 			//
 
 			bertybot.WithMessengerClient(client),
