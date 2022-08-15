@@ -178,6 +178,10 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			bertybot.WithCommand("refresh-all", "refresh channels", bertyBotRefreshAll()),
 			//
 
+			// AUTH COMMANDS
+			bertybot.WithCommand("auth", "auth", TerritoriAuth(dbA)),
+			//
+
 			bertybot.WithMessengerClient(client),
 		)
 		if opts.Debug {

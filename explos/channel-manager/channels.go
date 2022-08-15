@@ -10,7 +10,8 @@ import (
 
 type database interface {
 	UserExist(pubKey string) bool
-	AddUser(pubKey string) bool
+	AddUser(territoriPubKey string, bertyPubKey string, nonce int) bool
+	ConfirmUser(territoriPubKey string, bertyPubKey string) bool
 
 	AddWorkspace(workspaceName string) bool
 	AddChannel(workspaceName string, channelName string, bertyGroupLink string) bool

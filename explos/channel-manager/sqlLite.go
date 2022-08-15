@@ -18,18 +18,25 @@ type Channel struct {
 }
 
 type User struct {
-	gorm.Model
-	PubKey string
+	ID              uint `gorm:"primary_key"`
+	TerritoriPubKey string
+	BertyPubKey     string
+	Status          int
+	Nonce           int
 }
 
 type sqlLite struct {
 	db *gorm.DB
 }
 
-func (s sqlLite) AddUser(pubKey string) (ok bool) {
+func (s sqlLite) AddUser(territoriPubKey string, bertyPubKey string, nonce int) (ok bool) {
+	// gest user exist cases (berty and territori pubKeys)
 	db := s.db
 	db.Create(&User{
-		PubKey: pubKey,
+		TerritoriPubKey: territoriPubKey,
+		BertyPubKey:     bertyPubKey,
+		Status:          0,
+		Nonce:           nonce,
 	})
 
 	return true
@@ -66,7 +73,23 @@ func (s sqlLite) UserExist(pubKey string) bool {
 	var user User
 	_ = s.db.Where("pub_key = ?", pubKey).First(&user)
 
-	return user.PubKey != ""
+	return user.TerritoriPubKey != ""
+}
+
+func (s sqlLite) ConfirmUser(territoriPubKey string, bertyPubKey string) (ok bool) {
+	var user User
+	if err := s.db.Where("territori_pub_key = ? and berty_pub_key = ?", territoriPubKey, bertyPubKey).First(&user); err.Error != nil {
+		return false
+	}
+
+	user.Status = 1
+	user.Nonce = 0
+
+	if err := s.db.Save(&user); err.Error != nil {
+		return false
+	}
+
+	return true
 }
 
 func (s sqlLite) ChannelExist(workspaceName string, channelName string) bool {
