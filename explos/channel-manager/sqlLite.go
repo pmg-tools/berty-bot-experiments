@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	sqlite "github.com/flyingtime/gorm-sqlcipher"
 	"gorm.io/gorm"
@@ -53,9 +52,11 @@ type User struct {
 func (s sqlLite) AddUser(teritoriPubKey string, bertyPubKey string, nonce int) error {
 	// gest user exist cases (berty and teritori pubKeys)
 	db := s.db
-	tx := db.Create(&User{
+
+	var user User
+	tx := db.Where(&User{
 		BertyPubKey: bertyPubKey,
-	})
+	}).FirstOrInit(&user)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -67,18 +68,14 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 	db := s.db
 
 	var workspace Workspace
-	tx := db.Where("name = ?", workspaceName).First(&workspace)
-	if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-		ws := &Workspace{Name: workspaceName}
-		db.Create(ws)
-		workspace.ID = ws.ID
-	}
+	tx := db.Where(Workspace{Name: workspaceName}).FirstOrCreate(&workspace)
 
-	tx = db.Create(&Channel{
+	var channel Channel
+	tx = db.Where(&Channel{
 		ChannelName: channelName,
 		BertyLink:   bertyGroupLink,
 		Wid:         workspace.ID,
-	})
+	}).FirstOrCreate(&channel)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -88,19 +85,13 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 
 func (s sqlLite) AddWorkspace(workspaceName string) error {
 	db := s.db
-	tx := db.Create(&Workspace{Name: workspaceName})
+	var workspace Workspace
+	tx := db.Where(Workspace{Name: workspaceName}).FirstOrCreate(&workspace)
 	if tx.Error != nil {
 		return tx.Error
 	}
 
 	return nil
-}
-
-func (s sqlLite) UserExist(pubKey string) bool {
-	var user User
-	tx := s.db.Where("pub_key = ?", pubKey).First(&user)
-
-	return !errors.Is(tx.Error, gorm.ErrRecordNotFound)
 }
 
 func (s sqlLite) ConfirmUser(teritoriPubKey string, bertyPubKey string) (ok bool) {
@@ -114,26 +105,6 @@ func (s sqlLite) ConfirmUser(teritoriPubKey string, bertyPubKey string) (ok bool
 	}
 
 	return true
-}
-
-func (s sqlLite) ChannelExist(workspaceName string, channelName string) bool {
-	var workspace Workspace
-	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
-	if workspace.Name == "" {
-		return false
-	}
-
-	var channel Channel
-	_ = s.db.Where("wid = ? AND channel_name = ?", workspace.ID, channelName).First(&channel)
-
-	return channel.ChannelName != ""
-}
-
-func (s sqlLite) WorkspaceExist(workspaceName string) bool {
-	var workspace Workspace
-	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
-
-	return workspace.Name != ""
 }
 
 func (s sqlLite) ListWorkspaces() ([]string, error) {
