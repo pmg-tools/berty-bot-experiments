@@ -9,15 +9,11 @@ import (
 )
 
 type database interface {
-	UserExist(pubKey string) bool
 	AddUser(teritoriPubKey string, bertyPubKey string, nonce int) error
 	ConfirmUser(teritoriPubKey string, bertyPubKey string) bool
 
 	AddWorkspace(workspaceName string) error
 	AddChannel(workspaceName string, channelName string, bertyGroupLink string) error
-
-	WorkspaceExist(workspaceName string) bool
-	ChannelExist(workspaceName string, channelName string) bool
 
 	GetChannelsInvitation(workspaceName string, channelsName []string) []Channel
 
@@ -46,10 +42,6 @@ func bertyBotAddWorkspace(db database, mutex *sync.Mutex) func(ctx bertybot.Cont
 		//
 
 		mutex.Lock()
-		if db.WorkspaceExist(workspaceName) {
-			_ = ctx.ReplyString("workspace already exists")
-			return
-		}
 
 		err = db.AddWorkspace(workspaceName)
 		mutex.Unlock()
@@ -83,10 +75,6 @@ func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 		//
 
 		mutex.Lock()
-		if db.ChannelExist(workspaceName, channelName) {
-			_ = ctx.ReplyString("workspace or channel already exist")
-			return
-		}
 
 		link, err := bertyBotCreateGroup(fmt.Sprintf("%s/#%s", workspaceName, channelName))
 		if err != nil {
