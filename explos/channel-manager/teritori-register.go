@@ -16,8 +16,8 @@ type teritoriData struct {
 }
 
 func step0(ctx bertybot.Context, t teritoriData) {
-	if t.Data["PubKey"] == "" {
-		ctx.ReplyString("error: missing teritoriPubKey")
+	if t.Data["pubkey"] == "" {
+		ctx.ReplyString("error: missing territoriPubKey")
 		return
 	}
 
@@ -34,18 +34,19 @@ func step0(ctx bertybot.Context, t teritoriData) {
 		Step: 1,
 		Data: map[string]string{
 			"nonce": fmt.Sprintf("%d", nonce),
-			"sig":   base64.StdEncoding.EncodeToString(Sign((*[64]byte)(pubKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data["teritoriPubKey"])))),
+			"sig":   base64.StdEncoding.EncodeToString(Sign((*[64]byte)(pubKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data["pubkey"])))),
 		},
 	})
 	if err != nil {
 		ctx.ReplyString("error: " + err.Error())
 		return
 	}
+	fmt.Println(base64.StdEncoding.EncodeToString(Sign((*[64]byte)(pubKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data["pubkey"])))))
 	ctx.ReplyString(string(m))
 }
 
 func step2(ctx bertybot.Context, d database, t teritoriData) {
-	if t.Data["prev_nonce"] == "" || t.Data["prev_sig"] == "" || t.Data["PubKey"] == "" || t.Data["sig"] == "" {
+	if t.Data["prev_nonce"] == "" || t.Data["prev_sig"] == "" || t.Data["pubkey"] == "" || t.Data["sig"] == "" {
 		ctx.ReplyString("error: missing arg")
 		return
 	}
@@ -56,34 +57,44 @@ func step2(ctx bertybot.Context, d database, t teritoriData) {
 		return
 	}
 
-	res, ok := Verify((*[32]byte)(privKey), []byte(t.Data["prev_sig"]))
-	if !ok || !strings.Contains(string(res), t.Data["prev_nonce"]) {
+	prevSig, err := base64.StdEncoding.DecodeString(t.Data["prev_sig"])
+	if err != nil {
+		ctx.ReplyString("error: " + err.Error())
+		return
+	}
+
+	res, ok := Verify((*[32]byte)(privKey), prevSig)
+	fmt.Println(res)
+	if !ok || string(res) != t.Data["prev_nonce"]+t.Data["pubkey"]+"sisi" {
 		ctx.ReplyString("error: invalid previous signature")
 		return
 	}
 
 	if /* verify signature */ true {
-		if ok := d.ConfirmUser(t.Data["teritoriPubKey"], "bertyPubKey"); !ok {
-			ctx.ReplyString("error: user not found")
-			return
-		}
 		m, err := json.Marshal(teritoriData{
 			Step: 3,
 			Data: map[string]string{
-				"message": "accepted",
+				"message": "sync accepted",
 			},
 		})
 		if err != nil {
 			ctx.ReplyString("error: " + err.Error())
 			return
 		}
+
+		err = d.SyncTeritoriKey(t.Data["pubkey"], "bertyPubkey")
+		if err != nil {
+			ctx.ReplyString("error: " + err.Error())
+			return
+		}
 		ctx.ReplyString(string(m))
+		return
 	}
 
 	m, err := json.Marshal(teritoriData{
 		Step: 3,
 		Data: map[string]string{
-			"message": "rejected",
+			"message": "sync rejected",
 		},
 	})
 	if err != nil {
@@ -93,7 +104,7 @@ func step2(ctx bertybot.Context, d database, t teritoriData) {
 	ctx.ReplyString(string(m))
 }
 
-func teritoriAuth(d database) func(ctx bertybot.Context) {
+func TeritoriAuth(d database) func(ctx bertybot.Context) {
 	return func(ctx bertybot.Context) {
 		data := strings.Replace(ctx.UserMessage, "/link-teritori-account ", "", 1)
 

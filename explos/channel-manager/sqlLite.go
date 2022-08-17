@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	sqlite "github.com/flyingtime/gorm-sqlcipher"
 	"gorm.io/gorm"
@@ -17,7 +18,7 @@ func NewSqliteDB() (*sqlLite, error) {
 	}
 
 	s := &sqlLite{db: db}
-	err = s.db.AutoMigrate(&User{}, &Workspace{}, &Channel{})
+	err = s.db.AutoMigrate(&User{}, &TeritoriKey{}, &Workspace{}, &Channel{})
 	if err != nil {
 		return nil, err
 	}
@@ -38,25 +39,36 @@ type Channel struct {
 	Wid         uint
 }
 
-type teritoriKey struct {
-	PubKey string `gorm:"primary_key"`
+type TeritoriKey struct {
+	ID     uint `gorm:"primary_key"`
+	PubKey string
 	UserId uint
 }
 
 type User struct {
-	ID             uint `gorm:"primary_key"`
-	BertyPubKey    string
-	teritoriPubKey []teritoriKey `gorm:"ForeignKey:UserId"`
+	ID              uint `gorm:"primary_key"`
+	BertyPubKey     string
+	TerritoriPubKey []TeritoriKey `gorm:"ForeignKey:UserId"`
 }
 
-func (s sqlLite) AddUser(teritoriPubKey string, bertyPubKey string, nonce int) error {
-	// gest user exist cases (berty and teritori pubKeys)
+func (s sqlLite) AddUser(bertyPubKey string) error {
+	db := s.db
+	tx := db.FirstOrCreate(&User{
+		BertyPubKey: bertyPubKey,
+	})
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	return nil
+}
+
+func (s sqlLite) SyncTeritoriKey(teritoriPubkey string, bertyPubkey string) error {
 	db := s.db
 
-	var user User
-	tx := db.Where(&User{
-		BertyPubKey: bertyPubKey,
-	}).FirstOrInit(&user)
+	user := User{BertyPubKey: bertyPubkey}
+	tx := db.FirstOrCreate(&user, "berty_pub_key = ?", bertyPubkey)
+	db.Create(&TeritoriKey{PubKey: teritoriPubkey, UserId: user.ID})
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -94,17 +106,31 @@ func (s sqlLite) AddWorkspace(workspaceName string) error {
 	return nil
 }
 
-func (s sqlLite) ConfirmUser(teritoriPubKey string, bertyPubKey string) (ok bool) {
+func (s sqlLite) UserExist(bertyPubkey string) bool {
 	var user User
-	if err := s.db.Where("teritori_pub_key = ? and berty_pub_key = ?", teritoriPubKey, bertyPubKey).First(&user); err.Error != nil {
+	tx := s.db.Where("berty_pub_key = ?", bertyPubkey).First(&user)
+
+	return !errors.Is(tx.Error, gorm.ErrRecordNotFound)
+}
+
+func (s sqlLite) ChannelExist(workspaceName string, channelName string) bool {
+	var workspace Workspace
+	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
+	if workspace.Name == "" {
 		return false
 	}
 
-	if err := s.db.Save(&user); err.Error != nil {
-		return false
-	}
+	var channel Channel
+	_ = s.db.Where("wid = ? AND channel_name = ?", workspace.ID, channelName).First(&channel)
 
-	return true
+	return channel.ChannelName != ""
+}
+
+func (s sqlLite) WorkspaceExist(workspaceName string) bool {
+	var workspace Workspace
+	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
+
+	return workspace.Name != ""
 }
 
 func (s sqlLite) ListWorkspaces() ([]string, error) {
