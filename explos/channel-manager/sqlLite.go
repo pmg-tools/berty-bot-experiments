@@ -79,20 +79,14 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 	db := s.db
 
 	var workspace Workspace
-	tx := db.Where("name = ?", workspaceName).First(&workspace)
-	if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-		ws := &Workspace{Name: workspaceName}
-		db.Create(ws)
-		workspace.ID = ws.ID
-	} else if tx.Error != nil {
-		return tx.Error
-	}
+	tx := db.Where(Workspace{Name: workspaceName}).FirstOrCreate(&workspace)
 
-	tx = db.Create(&Channel{
+	var channel Channel
+	tx = db.Where(&Channel{
 		ChannelName: channelName,
 		BertyLink:   bertyGroupLink,
 		Wid:         workspace.ID,
-	})
+	}).FirstOrCreate(&channel)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -102,7 +96,8 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 
 func (s sqlLite) AddWorkspace(workspaceName string) error {
 	db := s.db
-	tx := db.Create(&Workspace{Name: workspaceName})
+	var workspace Workspace
+	tx := db.Where(Workspace{Name: workspaceName}).FirstOrCreate(&workspace)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -171,5 +166,32 @@ func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []stri
 
 	var channels []Channel
 	_ = s.db.Where("wid = ? AND channel_name IN(?)", workspace.ID, channelsName).Find(&channels)
+
+	newChannel := false
+	createChannel := true
+	for _, v := range channelsName {
+		for _, w := range channels {
+			if v == w.ChannelName {
+				createChannel = false
+				break
+			}
+		}
+		if createChannel == true {
+			link, err := bertyBotCreateGroup(fmt.Sprintf("%s/#%s", workspaceName, v))
+			if err != nil {
+				return nil
+			}
+
+			err = s.AddChannel(workspaceName, v, link)
+			newChannel = true
+		}
+		createChannel = true
+	}
+
+	if newChannel == true {
+		_ = s.db.Where("name = ?", workspaceName).First(&workspace)
+		_ = s.db.Where("wid = ? AND channel_name IN(?)", workspace.ID, channelsName).Find(&channels)
+	}
+
 	return channels
 }

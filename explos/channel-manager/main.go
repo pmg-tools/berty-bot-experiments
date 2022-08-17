@@ -53,7 +53,7 @@ func mainRun(args []string) error {
 			// opts.BertyNodeAddr = ""
 			fs.BoolVar(&opts.Debug, "debug", false, "debug mode")
 			fs.StringVar(&opts.BertyNodeAddr, "berty-node-addr", "127.0.0.1:9091", "Berty node address")
-			fs.StringVar(&opts.apiAdr, "api-adr", "http://127.0.0.1:8080/access", "Territori API address")
+			fs.StringVar(&opts.apiAdr, "api-adr", "http://127.0.0.1:8080/access", "teritori API address")
 		},
 		Exec:      doRoot,
 		FFOptions: []ff.Option{ff.WithEnvVarPrefix(name)},
@@ -172,7 +172,7 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			//
 
 			// AUTH COMMANDS
-			bertybot.WithCommand("link-territori-account", "auth", TerritoriAuth(dbA)),
+			bertybot.WithCommand("link-teritori-account", "auth", teritoriAuth(dbA)),
 			//
 
 			bertybot.WithMessengerClient(client),

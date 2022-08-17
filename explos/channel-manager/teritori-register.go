@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-type territoriData struct {
+type teritoriData struct {
 	Step int               `json:"step"`
 	Data map[string]string `json:"data"`
 }
@@ -30,7 +30,7 @@ func step0(ctx bertybot.Context, t territoriData) {
 
 	nonce := rand.Int()
 
-	m, err := json.Marshal(territoriData{
+	m, err := json.Marshal(teritoriData{
 		Step: 1,
 		Data: map[string]string{
 			"nonce": fmt.Sprintf("%d", nonce),
@@ -45,7 +45,7 @@ func step0(ctx bertybot.Context, t territoriData) {
 	ctx.ReplyString(string(m))
 }
 
-func step2(ctx bertybot.Context, d database, t territoriData) {
+func step2(ctx bertybot.Context, d database, t teritoriData) {
 	if t.Data["prev_nonce"] == "" || t.Data["prev_sig"] == "" || t.Data["pubkey"] == "" || t.Data["sig"] == "" {
 		ctx.ReplyString("error: missing arg")
 		return
@@ -71,7 +71,7 @@ func step2(ctx bertybot.Context, d database, t territoriData) {
 	}
 
 	if /* verify signature */ true {
-		m, err := json.Marshal(territoriData{
+		m, err := json.Marshal(teritoriData{
 			Step: 3,
 			Data: map[string]string{
 				"message": "sync accepted",
@@ -91,7 +91,7 @@ func step2(ctx bertybot.Context, d database, t territoriData) {
 		return
 	}
 
-	m, err := json.Marshal(territoriData{
+	m, err := json.Marshal(teritoriData{
 		Step: 3,
 		Data: map[string]string{
 			"message": "sync rejected",
@@ -104,11 +104,11 @@ func step2(ctx bertybot.Context, d database, t territoriData) {
 	ctx.ReplyString(string(m))
 }
 
-func TerritoriAuth(d database) func(ctx bertybot.Context) {
+func TeritoriAuth(d database) func(ctx bertybot.Context) {
 	return func(ctx bertybot.Context) {
-		data := strings.Replace(ctx.UserMessage, "/link-territori-account ", "", 1)
+		data := strings.Replace(ctx.UserMessage, "/link-teritori-account ", "", 1)
 
-		var t territoriData
+		var t teritoriData
 		err := json.Unmarshal([]byte(data), &t)
 		if err != nil {
 			ctx.ReplyString("error: " + err.Error())
