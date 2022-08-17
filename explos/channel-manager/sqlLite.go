@@ -38,19 +38,19 @@ type Channel struct {
 	Wid         uint
 }
 
-type TerritoriKey struct {
+type teritoriKey struct {
 	PubKey string `gorm:"primary_key"`
 	UserId uint
 }
 
 type User struct {
-	ID              uint `gorm:"primary_key"`
-	BertyPubKey     string
-	TerritoriPubKey []TerritoriKey `gorm:"ForeignKey:UserId"`
+	ID             uint `gorm:"primary_key"`
+	BertyPubKey    string
+	teritoriPubKey []teritoriKey `gorm:"ForeignKey:UserId"`
 }
 
-func (s sqlLite) AddUser(territoriPubKey string, bertyPubKey string, nonce int) error {
-	// gest user exist cases (berty and territori pubKeys)
+func (s sqlLite) AddUser(teritoriPubKey string, bertyPubKey string, nonce int) error {
+	// gest user exist cases (berty and teritori pubKeys)
 	db := s.db
 	tx := db.Create(&User{
 		BertyPubKey: bertyPubKey,
@@ -102,9 +102,9 @@ func (s sqlLite) UserExist(pubKey string) bool {
 	return !errors.Is(tx.Error, gorm.ErrRecordNotFound)
 }
 
-func (s sqlLite) ConfirmUser(territoriPubKey string, bertyPubKey string) (ok bool) {
+func (s sqlLite) ConfirmUser(teritoriPubKey string, bertyPubKey string) (ok bool) {
 	var user User
-	if err := s.db.Where("territori_pub_key = ? and berty_pub_key = ?", territoriPubKey, bertyPubKey).First(&user); err.Error != nil {
+	if err := s.db.Where("teritori_pub_key = ? and berty_pub_key = ?", teritoriPubKey, bertyPubKey).First(&user); err.Error != nil {
 		return false
 	}
 

@@ -10,14 +10,14 @@ import (
 	"strings"
 )
 
-type territoriData struct {
+type teritoriData struct {
 	Step int               `json:"step"`
 	Data map[string]string `json:"data"`
 }
 
-func step0(ctx bertybot.Context, t territoriData) {
+func step0(ctx bertybot.Context, t teritoriData) {
 	if t.Data["PubKey"] == "" {
-		ctx.ReplyString("error: missing territoriPubKey")
+		ctx.ReplyString("error: missing teritoriPubKey")
 		return
 	}
 
@@ -30,11 +30,11 @@ func step0(ctx bertybot.Context, t territoriData) {
 
 	nonce := rand.Int()
 
-	m, err := json.Marshal(territoriData{
+	m, err := json.Marshal(teritoriData{
 		Step: 1,
 		Data: map[string]string{
 			"nonce": fmt.Sprintf("%d", nonce),
-			"sig":   base64.StdEncoding.EncodeToString(Sign((*[64]byte)(pubKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data["territoriPubKey"])))),
+			"sig":   base64.StdEncoding.EncodeToString(Sign((*[64]byte)(pubKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data["teritoriPubKey"])))),
 		},
 	})
 	if err != nil {
@@ -44,7 +44,7 @@ func step0(ctx bertybot.Context, t territoriData) {
 	ctx.ReplyString(string(m))
 }
 
-func step2(ctx bertybot.Context, d database, t territoriData) {
+func step2(ctx bertybot.Context, d database, t teritoriData) {
 	if t.Data["prev_nonce"] == "" || t.Data["prev_sig"] == "" || t.Data["PubKey"] == "" || t.Data["sig"] == "" {
 		ctx.ReplyString("error: missing arg")
 		return
@@ -63,11 +63,11 @@ func step2(ctx bertybot.Context, d database, t territoriData) {
 	}
 
 	if /* verify signature */ true {
-		if ok := d.ConfirmUser(t.Data["territoriPubKey"], "bertyPubKey"); !ok {
+		if ok := d.ConfirmUser(t.Data["teritoriPubKey"], "bertyPubKey"); !ok {
 			ctx.ReplyString("error: user not found")
 			return
 		}
-		m, err := json.Marshal(territoriData{
+		m, err := json.Marshal(teritoriData{
 			Step: 3,
 			Data: map[string]string{
 				"message": "accepted",
@@ -80,7 +80,7 @@ func step2(ctx bertybot.Context, d database, t territoriData) {
 		ctx.ReplyString(string(m))
 	}
 
-	m, err := json.Marshal(territoriData{
+	m, err := json.Marshal(teritoriData{
 		Step: 3,
 		Data: map[string]string{
 			"message": "rejected",
@@ -93,11 +93,11 @@ func step2(ctx bertybot.Context, d database, t territoriData) {
 	ctx.ReplyString(string(m))
 }
 
-func TerritoriAuth(d database) func(ctx bertybot.Context) {
+func teritoriAuth(d database) func(ctx bertybot.Context) {
 	return func(ctx bertybot.Context) {
-		data := strings.Replace(ctx.UserMessage, "/link-territori-account ", "", 1)
+		data := strings.Replace(ctx.UserMessage, "/link-teritori-account ", "", 1)
 
-		var t territoriData
+		var t teritoriData
 		err := json.Unmarshal([]byte(data), &t)
 		if err != nil {
 			ctx.ReplyString("error: " + err.Error())
