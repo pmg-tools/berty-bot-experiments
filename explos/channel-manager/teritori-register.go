@@ -15,7 +15,7 @@ type teritoriData struct {
 	Data map[string]string `json:"data"`
 }
 
-func step0(ctx bertybot.Context, t territoriData) {
+func step0(ctx bertybot.Context, t teritoriData) {
 	if t.Data["pubkey"] == "" {
 		ctx.ReplyString("error: missing territoriPubKey")
 		return

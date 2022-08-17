@@ -172,7 +172,7 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			//
 
 			// AUTH COMMANDS
-			bertybot.WithCommand("link-teritori-account", "auth", teritoriAuth(dbA)),
+			bertybot.WithCommand("link-teritori-account", "auth", TeritoriAuth(dbA)),
 			//
 
 			bertybot.WithMessengerClient(client),

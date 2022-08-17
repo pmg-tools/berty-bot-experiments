@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	sqlite "github.com/flyingtime/gorm-sqlcipher"
 	"gorm.io/gorm"
 )
