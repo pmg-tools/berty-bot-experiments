@@ -9,7 +9,6 @@ import (
 )
 
 type database interface {
-	UserExist(pubKey string) bool
 	AddUser(bertyPubKey string) error
 	SyncTeritoriKey(teritoriPubkey string, bertyPubkey string) error
 
@@ -43,7 +42,6 @@ func bertyBotAddWorkspace(db database, mutex *sync.Mutex) func(ctx bertybot.Cont
 		//
 
 		mutex.Lock()
-
 		err = db.AddWorkspace(workspaceName)
 		mutex.Unlock()
 
@@ -51,7 +49,6 @@ func bertyBotAddWorkspace(db database, mutex *sync.Mutex) func(ctx bertybot.Cont
 			_ = ctx.ReplyString(err.Error())
 			return
 		}
-
 		_ = ctx.ReplyString("workspace added")
 	}
 }
@@ -76,7 +73,6 @@ func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 		//
 
 		mutex.Lock()
-
 		link, err := bertyBotCreateGroup(fmt.Sprintf("%s/#%s", workspaceName, channelName))
 		if err != nil {
 			_ = ctx.ReplyString(err.Error())
