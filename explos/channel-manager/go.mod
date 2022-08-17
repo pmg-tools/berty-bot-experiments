@@ -20,6 +20,7 @@ require (
 	github.com/oklog/run v1.1.0
 	github.com/peterbourgon/ff/v3 v3.0.0
 	go.uber.org/zap v1.21.0
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 	google.golang.org/grpc v1.48.0
 	gorm.io/gorm v1.23.8
 	moul.io/climan v1.0.0
@@ -265,7 +266,6 @@ require (
 	go.uber.org/fx v1.15.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
-	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.5.0 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect

@@ -10,10 +10,11 @@ import (
 
 type database interface {
 	UserExist(pubKey string) bool
-	AddUser(pubKey string) bool
+	AddUser(territoriPubKey string, bertyPubKey string, nonce int) error
+	ConfirmUser(territoriPubKey string, bertyPubKey string) bool
 
-	AddWorkspace(workspaceName string) bool
-	AddChannel(workspaceName string, channelName string, bertyGroupLink string) bool
+	AddWorkspace(workspaceName string) error
+	AddChannel(workspaceName string, channelName string, bertyGroupLink string) error
 
 	WorkspaceExist(workspaceName string) bool
 	ChannelExist(workspaceName string, channelName string) bool
@@ -44,14 +45,19 @@ func bertyBotAddWorkspace(db database, mutex *sync.Mutex) func(ctx bertybot.Cont
 		}
 		//
 
+		mutex.Lock()
 		if db.WorkspaceExist(workspaceName) {
 			_ = ctx.ReplyString("workspace already exists")
 			return
 		}
 
-		mutex.Lock()
-		db.AddWorkspace(workspaceName)
+		err = db.AddWorkspace(workspaceName)
 		mutex.Unlock()
+
+		if err != nil {
+			_ = ctx.ReplyString(err.Error())
+			return
+		}
 
 		_ = ctx.ReplyString("workspace added")
 	}
@@ -76,6 +82,7 @@ func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 		}
 		//
 
+		mutex.Lock()
 		if db.ChannelExist(workspaceName, channelName) {
 			_ = ctx.ReplyString("workspace or channel already exist")
 			return
@@ -87,9 +94,13 @@ func bertyBotAddChannel(db database, mutex *sync.Mutex) func(ctx bertybot.Contex
 			return
 		}
 
-		mutex.Lock()
-		db.AddChannel(workspaceName, channelName, link)
+		err = db.AddChannel(workspaceName, channelName, link)
 		mutex.Unlock()
+
+		if err != nil {
+			_ = ctx.ReplyString(err.Error())
+			return
+		}
 
 		_ = ctx.ReplyString(link)
 	}

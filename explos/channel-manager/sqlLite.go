@@ -1,8 +1,29 @@
 package main
 
 import (
+	"errors"
+	sqlite "github.com/flyingtime/gorm-sqlcipher"
 	"gorm.io/gorm"
 )
+
+type sqlLite struct {
+	db *gorm.DB
+}
+
+func NewSqliteDB() (*sqlLite, error) {
+	db, err := gorm.Open(sqlite.Open("test.db"))
+	if err != nil {
+		return nil, err
+	}
+
+	s := &sqlLite{db: db}
+	err = s.db.AutoMigrate(&User{}, &Workspace{}, &Channel{})
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
 
 type Workspace struct {
 	ID       uint `gorm:"primary_key"`
@@ -17,56 +38,81 @@ type Channel struct {
 	Wid         uint
 }
 
+type TerritoriKey struct {
+	PubKey string `gorm:"primary_key"`
+	UserId uint
+}
+
 type User struct {
-	gorm.Model
-	PubKey string
+	ID              uint `gorm:"primary_key"`
+	BertyPubKey     string
+	TerritoriPubKey []TerritoriKey `gorm:"ForeignKey:UserId"`
 }
 
-type sqlLite struct {
-	db *gorm.DB
-}
-
-func (s sqlLite) AddUser(pubKey string) (ok bool) {
+func (s sqlLite) AddUser(territoriPubKey string, bertyPubKey string, nonce int) error {
+	// gest user exist cases (berty and territori pubKeys)
 	db := s.db
-	db.Create(&User{
-		PubKey: pubKey,
+	tx := db.Create(&User{
+		BertyPubKey: bertyPubKey,
 	})
+	if tx.Error != nil {
+		return tx.Error
+	}
 
-	return true
+	return nil
 }
 
-func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroupLink string) (ok bool) {
+func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroupLink string) error {
 	db := s.db
 
 	var workspace Workspace
-	_ = db.Where("name = ?", workspaceName).First(&workspace)
-	if workspace.Name == "" {
+	tx := db.Where("name = ?", workspaceName).First(&workspace)
+	if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 		ws := &Workspace{Name: workspaceName}
 		db.Create(ws)
 		workspace.ID = ws.ID
 	}
 
-	_ = db.Create(&Channel{
+	tx = db.Create(&Channel{
 		ChannelName: channelName,
 		BertyLink:   bertyGroupLink,
 		Wid:         workspace.ID,
 	})
+	if tx.Error != nil {
+		return tx.Error
+	}
 
-	return true
+	return nil
 }
 
-func (s sqlLite) AddWorkspace(workspaceName string) (ok bool) {
+func (s sqlLite) AddWorkspace(workspaceName string) error {
 	db := s.db
-	_ = db.Create(&Workspace{Name: workspaceName})
+	tx := db.Create(&Workspace{Name: workspaceName})
+	if tx.Error != nil {
+		return tx.Error
+	}
 
-	return true
+	return nil
 }
 
 func (s sqlLite) UserExist(pubKey string) bool {
 	var user User
-	_ = s.db.Where("pub_key = ?", pubKey).First(&user)
+	tx := s.db.Where("pub_key = ?", pubKey).First(&user)
 
-	return user.PubKey != ""
+	return !errors.Is(tx.Error, gorm.ErrRecordNotFound)
+}
+
+func (s sqlLite) ConfirmUser(territoriPubKey string, bertyPubKey string) (ok bool) {
+	var user User
+	if err := s.db.Where("territori_pub_key = ? and berty_pub_key = ?", territoriPubKey, bertyPubKey).First(&user); err.Error != nil {
+		return false
+	}
+
+	if err := s.db.Save(&user); err.Error != nil {
+		return false
+	}
+
+	return true
 }
 
 func (s sqlLite) ChannelExist(workspaceName string, channelName string) bool {

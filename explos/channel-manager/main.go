@@ -8,8 +8,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	sqlite "github.com/flyingtime/gorm-sqlcipher"
-	"gorm.io/gorm"
 	"math/rand"
 	"os"
 	"runtime"
@@ -124,20 +122,15 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 	// berty bot
 	g.Add(func() error {
 		//var dbA = &mockDb{}
-		var dbA, err = func() (*sqlLite, error) {
-			db, err := gorm.Open(sqlite.Open("test.db"))
-			if err != nil {
-				return nil, err
-			}
+		var dbA, err = NewSqliteDB()
+		if err != nil {
+			return fmt.Errorf("db init: %w", err)
+		}
 
-			s := &sqlLite{db: db}
-			err = s.db.AutoMigrate(&User{}, &Workspace{}, &Channel{})
-			if err != nil {
-				return nil, err
-			}
-
-			return s, nil
-		}()
+		err = GenKeys("private.key", "public.key")
+		if err != nil {
+			return err
+		}
 
 		var mutex = &sync.Mutex{}
 
@@ -176,6 +169,10 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			bertybot.WithCommand("list-workspaces", "list workspaces", bertyBotListWorkspaces(dbA)),
 			bertybot.WithCommand("list-channels", "list channels", bertyBotListChannels(dbA)),
 			bertybot.WithCommand("refresh-all", "refresh channels", bertyBotRefreshAll()),
+			//
+
+			// AUTH COMMANDS
+			bertybot.WithCommand("link-territori-account", "auth", TerritoriAuth(dbA)),
 			//
 
 			bertybot.WithMessengerClient(client),
