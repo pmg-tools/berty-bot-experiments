@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	sqlite "github.com/flyingtime/gorm-sqlcipher"
 	"gorm.io/gorm"
 )
@@ -169,5 +170,32 @@ func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []stri
 
 	var channels []Channel
 	_ = s.db.Where("wid = ? AND channel_name IN(?)", workspace.ID, channelsName).Find(&channels)
+
+	newChannel := false
+	createChannel := true
+	for _, v := range channelsName {
+		for _, w := range channels {
+			if v == w.ChannelName {
+				createChannel = false
+				break
+			}
+		}
+		if createChannel == true {
+			link, err := bertyBotCreateGroup(fmt.Sprintf("%s/#%s", workspaceName, v))
+			if err != nil {
+				return nil
+			}
+
+			err = s.AddChannel(workspaceName, v, link)
+			newChannel = true
+		}
+		createChannel = true
+	}
+
+	if newChannel == true {
+		_ = s.db.Where("name = ?", workspaceName).First(&workspace)
+		_ = s.db.Where("wid = ? AND channel_name IN(?)", workspace.ID, channelsName).Find(&channels)
+	}
+
 	return channels
 }
