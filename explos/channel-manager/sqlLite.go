@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	sqlite "github.com/flyingtime/gorm-sqlcipher"
 	"gorm.io/gorm"
@@ -68,7 +67,11 @@ func (s sqlLite) SyncTeritoriKey(teritoriPubkey string, bertyPubkey string) erro
 
 	user := User{BertyPubKey: bertyPubkey}
 	tx := db.FirstOrCreate(&user, "berty_pub_key = ?", bertyPubkey)
-	db.Create(&TeritoriKey{PubKey: teritoriPubkey, UserId: user.ID})
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	tx = db.Create(&TeritoriKey{PubKey: teritoriPubkey, UserId: user.ID})
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -104,33 +107,6 @@ func (s sqlLite) AddWorkspace(workspaceName string) error {
 	}
 
 	return nil
-}
-
-func (s sqlLite) UserExist(bertyPubkey string) bool {
-	var user User
-	tx := s.db.Where("berty_pub_key = ?", bertyPubkey).First(&user)
-
-	return !errors.Is(tx.Error, gorm.ErrRecordNotFound)
-}
-
-func (s sqlLite) ChannelExist(workspaceName string, channelName string) bool {
-	var workspace Workspace
-	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
-	if workspace.Name == "" {
-		return false
-	}
-
-	var channel Channel
-	_ = s.db.Where("wid = ? AND channel_name = ?", workspace.ID, channelName).First(&channel)
-
-	return channel.ChannelName != ""
-}
-
-func (s sqlLite) WorkspaceExist(workspaceName string) bool {
-	var workspace Workspace
-	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
-
-	return workspace.Name != ""
 }
 
 func (s sqlLite) ListWorkspaces() ([]string, error) {

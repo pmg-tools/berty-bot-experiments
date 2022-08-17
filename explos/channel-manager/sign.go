@@ -27,7 +27,6 @@ func GenKeys(privateFile string, publicFile string) error {
 	if err != nil {
 		return err
 	}
-	//
 
 	// public key
 	var publicBuffer bytes.Buffer
@@ -42,7 +41,6 @@ func GenKeys(privateFile string, publicFile string) error {
 	if err != nil {
 		return err
 	}
-	//
 
 	return nil
 }
