@@ -17,7 +17,7 @@ func NewSqliteDB() (*sqlLite, error) {
 	}
 
 	s := &sqlLite{db: db}
-	err = s.db.AutoMigrate(&User{}, &Workspace{}, &Channel{})
+	err = s.db.AutoMigrate(&User{}, &TeritoriKey{}, &Workspace{}, &Channel{})
 	if err != nil {
 		return nil, err
 	}
@@ -38,23 +38,36 @@ type Channel struct {
 	Wid         uint
 }
 
-type TerritoriKey struct {
-	PubKey string `gorm:"primary_key"`
+type TeritoriKey struct {
+	ID     uint `gorm:"primary_key"`
+	PubKey string
 	UserId uint
 }
 
 type User struct {
 	ID              uint `gorm:"primary_key"`
 	BertyPubKey     string
-	TerritoriPubKey []TerritoriKey `gorm:"ForeignKey:UserId"`
+	TerritoriPubKey []TeritoriKey `gorm:"ForeignKey:UserId"`
 }
 
-func (s sqlLite) AddUser(territoriPubKey string, bertyPubKey string, nonce int) error {
-	// gest user exist cases (berty and territori pubKeys)
+func (s sqlLite) AddUser(bertyPubKey string) error {
 	db := s.db
-	tx := db.Create(&User{
+	tx := db.FirstOrCreate(&User{
 		BertyPubKey: bertyPubKey,
 	})
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	return nil
+}
+
+func (s sqlLite) SyncTeritoriKey(teritoriPubkey string, bertyPubkey string) error {
+	db := s.db
+
+	user := User{BertyPubKey: bertyPubkey}
+	tx := db.FirstOrCreate(&user, "berty_pub_key = ?", bertyPubkey)
+	db.Create(&TeritoriKey{PubKey: teritoriPubkey, UserId: user.ID})
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -71,6 +84,8 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 		ws := &Workspace{Name: workspaceName}
 		db.Create(ws)
 		workspace.ID = ws.ID
+	} else if tx.Error != nil {
+		return tx.Error
 	}
 
 	tx = db.Create(&Channel{
@@ -95,24 +110,11 @@ func (s sqlLite) AddWorkspace(workspaceName string) error {
 	return nil
 }
 
-func (s sqlLite) UserExist(pubKey string) bool {
+func (s sqlLite) UserExist(bertyPubkey string) bool {
 	var user User
-	tx := s.db.Where("pub_key = ?", pubKey).First(&user)
+	tx := s.db.Where("berty_pub_key = ?", bertyPubkey).First(&user)
 
 	return !errors.Is(tx.Error, gorm.ErrRecordNotFound)
-}
-
-func (s sqlLite) ConfirmUser(territoriPubKey string, bertyPubKey string) (ok bool) {
-	var user User
-	if err := s.db.Where("territori_pub_key = ? and berty_pub_key = ?", territoriPubKey, bertyPubKey).First(&user); err.Error != nil {
-		return false
-	}
-
-	if err := s.db.Save(&user); err.Error != nil {
-		return false
-	}
-
-	return true
 }
 
 func (s sqlLite) ChannelExist(workspaceName string, channelName string) bool {
