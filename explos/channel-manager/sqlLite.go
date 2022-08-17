@@ -121,6 +121,13 @@ func (s sqlLite) ListWorkspaces() ([]string, error) {
 	return workspaceIDs, nil
 }
 
+func (s sqlLite) ListUsers() ([]User, error) {
+	var users []User
+	_ = s.db.Find(&users)
+
+	return users, nil
+}
+
 func (s sqlLite) ListChannels(workspaceName string) ([]string, error) {
 	var workspace Workspace
 	_ = s.db.Where("name = ?", workspaceName).First(&workspace)

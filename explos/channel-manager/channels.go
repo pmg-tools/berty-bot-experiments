@@ -2,8 +2,10 @@ package main
 
 import (
 	"berty.tech/berty/v2/go/pkg/bertybot"
+	"berty.tech/berty/v2/go/pkg/messengertypes"
 	"errors"
 	"fmt"
+	"github.com/gogo/protobuf/proto"
 	"strings"
 	"sync"
 )
@@ -20,6 +22,7 @@ type database interface {
 	// debug functions
 	ListWorkspaces() ([]string, error)
 	ListChannels(workspaceName string) ([]string, error)
+	ListUsers() ([]User, error)
 }
 
 func bertyBotAddWorkspace(db database, mutex *sync.Mutex) func(ctx bertybot.Context) {
@@ -135,9 +138,68 @@ func bertyBotListChannels(db database) func(ctx bertybot.Context) {
 	}
 }
 
-func bertyBotRefreshAll() func(ctx bertybot.Context) {
+func bertyBotRefresh(db database, api string) func(ctx bertybot.Context) {
 	return func(ctx bertybot.Context) {
-		_ = ctx.ReplyString("Not implemented yet!")
-		fmt.Println("Not implemented yet!")
+		// TODO: upgrade sdk to avoid it
+		if ctx.IsReplay || !ctx.IsNew {
+			return
+		}
+
+		pubKey, err := func(ctx bertybot.Context) (string, error) {
+			if len(ctx.CommandArgs) == 2 {
+				return ctx.CommandArgs[1], nil
+			}
+			return "", errors.New("bad arguments")
+		}(ctx)
+		if err != nil {
+			_ = ctx.ReplyString(err.Error())
+			return
+		}
+
+		data, err := requestUserAccess(api, pubKey)
+		if err != nil {
+			_ = ctx.ReplyString(err.Error())
+			return
+		}
+
+		var channels []Channel
+		for _, v := range data.Access {
+			channels = db.GetChannelsInvitation(v.Workspace, v.Channel)
+			for _, w := range channels {
+				_ = ctx.ReplyString(w.BertyLink)
+			}
+		}
+	}
+}
+
+func bertyBotRefreshAll(db database, api string) func(ctx bertybot.Context) {
+	return func(ctx bertybot.Context) {
+		users, err := db.ListUsers()
+		if err != nil {
+			_ = ctx.ReplyString("error: " + err.Error())
+		}
+
+		var data *RefreshData
+		var channels []Channel
+		for _, v := range users {
+			data, err = requestUserAccess(api, v.BertyPubKey)
+			for _, w := range data.Access {
+				channels = db.GetChannelsInvitation(w.Workspace, w.Channel)
+				for _, x := range channels {
+					userMessage, err := proto.Marshal(&messengertypes.AppMessage_UserMessage{Body: x.BertyLink})
+					if err != nil {
+						_ = ctx.ReplyString("error: " + err.Error())
+					}
+					_, err = ctx.Client.Interact(ctx.Context, &messengertypes.Interact_Request{
+						Type:                  messengertypes.AppMessage_TypeUserMessage,
+						Payload:               userMessage,
+						ConversationPublicKey: v.BertyPubKey,
+					})
+					if err != nil {
+						_ = ctx.ReplyString("error: " + err.Error())
+					}
+				}
+			}
+		}
 	}
 }
