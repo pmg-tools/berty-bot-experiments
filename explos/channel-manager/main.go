@@ -1,9 +1,6 @@
 package main
 
 import (
-	"berty.tech/berty/v2/go/pkg/bertybot"
-	"berty.tech/berty/v2/go/pkg/bertyversion"
-	"berty.tech/berty/v2/go/pkg/messengertypes"
 	"context"
 	"errors"
 	"flag"
@@ -13,6 +10,10 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
+
+	"berty.tech/berty/v2/go/pkg/bertybot"
+	"berty.tech/berty/v2/go/pkg/bertyversion"
+	"berty.tech/berty/v2/go/pkg/messengertypes"
 
 	qrterminal "github.com/mdp/qrterminal/v3"
 	"github.com/oklog/run"
@@ -121,8 +122,8 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 
 	// berty bot
 	g.Add(func() error {
-		//var dbA = &mockDb{}
-		var dbA, err = NewSqliteDB()
+		// var dbA = &mockDb{}
+		dbA, err := NewSqliteDB()
 		if err != nil {
 			return fmt.Errorf("db init: %w", err)
 		}
@@ -132,7 +133,7 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			return err
 		}
 
-		var mutex = &sync.Mutex{}
+		mutex := &sync.Mutex{}
 
 		versionCommand := func(ctx bertybot.Context) {
 			_ = ctx.ReplyString("version: " + bertyversion.Version)
@@ -140,7 +141,6 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 
 		cc, err := grpc.Dial(opts.BertyNodeAddr, grpc.WithInsecure())
 		if err != nil {
-
 			return fmt.Errorf("dial error: %w", err)
 		}
 		client := messengertypes.NewMessengerServiceClient(cc)
@@ -150,7 +150,7 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 		newOpts = append(newOpts,
 			bertybot.WithLogger(logger.Named("berty")), // configure a logger
 			bertybot.WithDisplayName(botName),          // bot name
-			//bertybot.WithHandler(bertybot.UserMessageHandler, userMessageHandler), // message handler
+			// bertybot.WithHandler(bertybot.UserMessageHandler, userMessageHandler), // message handler
 			bertybot.WithCommand("version", "show version", versionCommand),
 			bertybot.WithRecipe(bertybot.AutoAcceptIncomingContactRequestRecipe()),
 			bertybot.WithRecipe(bertybot.AutoAcceptIncomingGroupInviteRecipe()),

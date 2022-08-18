@@ -6,15 +6,15 @@ import (
 	"net/http"
 )
 
-type RefreshData struct {
+type refreshData struct {
 	Access []struct {
 		Workspace string   `json:"workspace"`
 		Channel   []string `json:"channel"`
 	} `json:"access"`
 }
 
-func requestUserAccess(api string, pubKey string) (*RefreshData, error) {
-	var data RefreshData
+func requestUserAccess(api string, pubKey string) (*refreshData, error) {
+	var data refreshData
 	client := http.Client{}
 	req, err := http.NewRequest("GET", api, nil)
 	if err != nil {
