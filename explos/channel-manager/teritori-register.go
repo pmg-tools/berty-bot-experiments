@@ -31,13 +31,18 @@ func step0(ctx bertybot.Context, t teritoriData) {
 
 	nonce := rand.Int()
 
-	m, err := json.Marshal(teritoriData{
+	proof := fmt.Sprintf("%d%ssisi", nonce, t.Data["pubkey"])
+	sig := Sign((*[64]byte)(pubKey), []byte(proof))
+	b64sig := base64.StdEncoding.EncodeToString(sig)
+	nonceStr := fmt.Sprintf("%d", nonce)
+	data := teritoriData{
 		Step: 1,
 		Data: map[string]string{
-			"nonce": fmt.Sprintf("%d", nonce),
-			"sig":   base64.StdEncoding.EncodeToString(Sign((*[64]byte)(pubKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data["pubkey"])))),
+			"nonce": nonceStr,
+			"sig":   b64sig,
 		},
-	})
+	}
+	m, err := json.Marshal(data)
 	if err != nil {
 		ctx.ReplyString("error: " + err.Error())
 		return
