@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -16,25 +17,22 @@ type teritoriData struct {
 	Data map[string]string `json:"data"`
 }
 
-func step0(ctx bertybot.Context, t teritoriData) {
+func step0(t teritoriData) (*teritoriData, error) {
 	if t.Data["pubkey"] == "" {
-		ctx.ReplyString("error: missing territoriPubKey")
-		return
+		return nil, errors.New("missing territoriPubKey")
 	}
 
 	// to modify
 	pubKey, err := os.ReadFile("public.key")
 	if err != nil {
-		ctx.ReplyString("error: " + err.Error())
-		return
+		return nil, err
 	}
 
 	nonce := rand.Int()
-
+	nonceStr := fmt.Sprintf("%d", nonce)
 	proof := fmt.Sprintf("%d%ssisi", nonce, t.Data["pubkey"])
 	sig := Sign((*[64]byte)(pubKey), []byte(proof))
 	b64sig := base64.StdEncoding.EncodeToString(sig)
-	nonceStr := fmt.Sprintf("%d", nonce)
 	data := teritoriData{
 		Step: 1,
 		Data: map[string]string{
@@ -42,72 +40,58 @@ func step0(ctx bertybot.Context, t teritoriData) {
 			"sig":   b64sig,
 		},
 	}
-	m, err := json.Marshal(data)
 	if err != nil {
-		ctx.ReplyString("error: " + err.Error())
-		return
+		return nil, err
 	}
 	fmt.Println(base64.StdEncoding.EncodeToString(Sign((*[64]byte)(pubKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data["pubkey"])))))
-	ctx.ReplyString(string(m))
+	return &data, nil
 }
 
-func step2(ctx bertybot.Context, d database, t teritoriData) {
+func step2(d database, t teritoriData) (*teritoriData, error) {
 	if t.Data["prev_nonce"] == "" || t.Data["prev_sig"] == "" || t.Data["pubkey"] == "" || t.Data["sig"] == "" {
-		ctx.ReplyString("error: missing arg")
-		return
+		return nil, errors.New("missing arg")
 	}
 
 	privKey, err := os.ReadFile("private.key")
 	if err != nil {
-		ctx.ReplyString("error: " + err.Error())
-		return
+		return nil, err
 	}
 
 	prevSig, err := base64.StdEncoding.DecodeString(t.Data["prev_sig"])
 	if err != nil {
-		ctx.ReplyString("error: " + err.Error())
-		return
+		return nil, err
 	}
 
 	res, ok := Verify((*[32]byte)(privKey), prevSig)
 	fmt.Println(res)
 	if !ok || string(res) != t.Data["prev_nonce"]+t.Data["pubkey"]+"sisi" {
-		ctx.ReplyString("error: invalid previous signature")
-		return
+		return nil, errors.New("invalid previous signature")
 	}
 
+	var data teritoriData
 	if /* verify signature */ true {
-		m, err := json.Marshal(teritoriData{
+		data = teritoriData{
 			Step: 3,
 			Data: map[string]string{
 				"message": "sync accepted",
 			},
-		})
+		}
 		if err != nil {
-			ctx.ReplyString("error: " + err.Error())
-			return
+			return nil, err
 		}
 
 		err = d.SyncTeritoriKey(t.Data["pubkey"], "bertyPubkey")
 		if err != nil {
-			ctx.ReplyString("error: " + err.Error())
-			return
+			return nil, err
 		}
-		ctx.ReplyString(string(m))
-		return
+		data = teritoriData{
+			Step: 3,
+			Data: map[string]string{
+				"message": "sync rejected",
+			},
+		}
 	}
-
-	m, err := json.Marshal(teritoriData{
-		Step: 3,
-		Data: map[string]string{
-			"message": "sync rejected",
-		},
-	})
-	if err != nil {
-		ctx.ReplyString("error: " + err.Error())
-		return
-	}
-	ctx.ReplyString(string(m))
+	return &data, nil
 }
 
 func TeritoriAuth(d database) func(ctx bertybot.Context) {
@@ -120,15 +104,30 @@ func TeritoriAuth(d database) func(ctx bertybot.Context) {
 			ctx.ReplyString("error: " + err.Error())
 		}
 
+		var res *teritoriData
 		switch t.Step {
 		case 0:
-			step0(ctx, t)
-			break
+			res, err = step0(t)
+
 		case 2:
-			step2(ctx, d, t)
-			break
+			res, err = step2(d, t)
+			if err != nil {
+				return
+			}
+
 		default:
-			ctx.ReplyString("error: unknown step")
+			err = errors.New("error: unknown step")
 		}
+		
+		if err != nil {
+			ctx.ReplyString("error: " + err.Error())
+			return
+		}
+		a, err := json.Marshal(res)
+		if err != nil {
+			ctx.ReplyString("error: " + err.Error())
+			return
+		}
+		ctx.ReplyString(string(a))
 	}
 }
