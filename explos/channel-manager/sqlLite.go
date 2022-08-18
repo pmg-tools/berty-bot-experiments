@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	sqlite "github.com/flyingtime/gorm-sqlcipher"
 	"gorm.io/gorm"
 )
@@ -32,10 +33,10 @@ type Workspace struct {
 }
 
 type Channel struct {
-	ID          uint `gorm:"primary_key"`
-	BertyLink   string
-	ChannelName string
-	Wid         uint
+	ID        uint `gorm:"primary_key"`
+	BertyLink string
+	Name      string
+	Wid       uint
 }
 
 type TeritoriKey struct {
@@ -87,9 +88,9 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 
 	var channel Channel
 	tx = db.Where(&Channel{
-		ChannelName: channelName,
-		BertyLink:   bertyGroupLink,
-		Wid:         workspace.ID,
+		Name:      channelName,
+		BertyLink: bertyGroupLink,
+		Wid:       workspace.ID,
 	}).FirstOrCreate(&channel)
 	if tx.Error != nil {
 		return tx.Error
@@ -129,33 +130,32 @@ func (s sqlLite) ListUsers() ([]User, error) {
 }
 
 func (s sqlLite) ListChannels(workspaceName string) ([]string, error) {
-	var workspace Workspace
-	_ = s.db.Where(Workspace{Name: workspaceName}).First(&workspace)
-
 	var channels []Channel
-	_ = s.db.Where("wid = ?", workspace.ID).Find(&channels)
+	s.db.
+		Joins("JOIN workspaces ON workspaces.id = channels.wid").
+		Where("workspaces.name = ?", workspaceName).
+		Find(&channels)
 
 	var channelIDs []string
 	for _, channel := range channels {
-		channelIDs = append(channelIDs, channel.ChannelName)
+		channelIDs = append(channelIDs, channel.Name)
 	}
 
 	return channelIDs, nil
 }
 
 func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []string) []Channel {
-
-	var workspace Workspace
-	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
-
 	var channels []Channel
-	_ = s.db.Where("wid = ? AND channel_name IN(?)", workspace.ID, channelsName).Find(&channels)
+	s.db.
+		Joins("JOIN workspaces ON workspaces.id = channels.wid").
+		Where("workspaces.name = ? AND channels.name IN (?)", workspaceName, channelsName).
+		Find(&channels)
 
 	newChannel := false
 	createChannel := true
 	for _, v := range channelsName {
 		for _, w := range channels {
-			if v == w.ChannelName {
+			if v == w.Name {
 				createChannel = false
 				break
 			}
@@ -174,8 +174,10 @@ func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []stri
 	}
 
 	if newChannel == true {
-		_ = s.db.Where("name = ?", workspaceName).First(&workspace)
-		_ = s.db.Where("wid = ? AND channel_name IN(?)", workspace.ID, channelsName).Find(&channels)
+		s.db.
+			Joins("JOIN workspaces ON workspaces.id = channels.wid").
+			Where("workspaces.name = ? AND channels.name IN (?)", workspaceName, channelsName).
+			Find(&channels)
 	}
 
 	return channels

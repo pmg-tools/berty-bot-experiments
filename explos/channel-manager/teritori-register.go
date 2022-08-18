@@ -1,13 +1,14 @@
 package main
 
 import (
-	"berty.tech/berty/v2/go/pkg/bertybot"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
 	"strings"
+
+	"berty.tech/berty/v2/go/pkg/bertybot"
 )
 
 type teritoriData struct {

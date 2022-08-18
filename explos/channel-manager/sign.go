@@ -3,8 +3,9 @@ package main
 import (
 	"bytes"
 	"crypto/rand"
-	"golang.org/x/crypto/nacl/sign"
 	"os"
+
+	"golang.org/x/crypto/nacl/sign"
 )
 
 // GenKeys generate key pair and save it on disk
@@ -16,7 +17,7 @@ func GenKeys(privateFile string, publicFile string) error {
 
 	// private key
 	var privateBuffer bytes.Buffer
-	pr, err := os.OpenFile(privateFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	pr, err := os.OpenFile(privateFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}
@@ -30,7 +31,7 @@ func GenKeys(privateFile string, publicFile string) error {
 
 	// public key
 	var publicBuffer bytes.Buffer
-	pu, err := os.OpenFile(publicFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	pu, err := os.OpenFile(publicFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}

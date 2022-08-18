@@ -1,13 +1,15 @@
 package main
 
 import (
-	"berty.tech/berty/v2/go/pkg/bertybot"
-	"berty.tech/berty/v2/go/pkg/messengertypes"
 	"errors"
 	"fmt"
-	"github.com/gogo/protobuf/proto"
 	"strings"
 	"sync"
+
+	"berty.tech/berty/v2/go/pkg/bertybot"
+	"berty.tech/berty/v2/go/pkg/messengertypes"
+
+	"github.com/gogo/protobuf/proto"
 )
 
 type database interface {
@@ -179,7 +181,7 @@ func bertyBotRefreshAll(db database, api string) func(ctx bertybot.Context) {
 			_ = ctx.ReplyString("error: " + err.Error())
 		}
 
-		var data *RefreshData
+		var data *refreshData
 		var channels []Channel
 		for _, v := range users {
 			data, err = requestUserAccess(api, v.BertyPubKey)
