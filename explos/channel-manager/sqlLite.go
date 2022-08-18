@@ -130,7 +130,7 @@ func (s sqlLite) ListUsers() ([]User, error) {
 
 func (s sqlLite) ListChannels(workspaceName string) ([]string, error) {
 	var workspace Workspace
-	_ = s.db.Where("name = ?", workspaceName).First(&workspace)
+	_ = s.db.Where(Workspace{Name: workspaceName}).First(&workspace)
 
 	var channels []Channel
 	_ = s.db.Where("wid = ?", workspace.ID).Find(&channels)
@@ -161,7 +161,8 @@ func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []stri
 			}
 		}
 		if createChannel == true {
-			link, err := bertyBotCreateGroup(fmt.Sprintf("%s/#%s", workspaceName, v))
+			chanName := fmt.Sprintf("%s/#%s", workspaceName, v)
+			link, err := bertyBotCreateGroup(chanName)
 			if err != nil {
 				return nil
 			}

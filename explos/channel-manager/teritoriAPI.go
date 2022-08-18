@@ -25,7 +25,6 @@ func requestUserAccess(api string, pubKey string) (*RefreshData, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer do.Body.Close()
 
 	body, err := ioutil.ReadAll(do.Body)
