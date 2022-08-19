@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"runtime"
@@ -36,12 +37,20 @@ func main() {
 	}
 }
 
-var opts struct { // nolint:maligned
-	Debug         bool
-	BertyNodeAddr string
-	apiAdr        string
-	rootLogger    *zap.Logger
-}
+var (
+	opts struct { // nolint:maligned
+		Debug          bool
+		BertyNodeAddr  string
+		apiAdr         string
+		rootLogger     *zap.Logger
+		privatekeyPath string
+		publickeyPath  string
+		generateKeys   bool
+	}
+
+	PrivateKey []byte
+	PublicKey  []byte
+)
 
 func mainRun(args []string) error {
 	// parse CLI
@@ -55,6 +64,9 @@ func mainRun(args []string) error {
 			fs.BoolVar(&opts.Debug, "debug", false, "debug mode")
 			fs.StringVar(&opts.BertyNodeAddr, "berty-node-addr", "127.0.0.1:9091", "Berty node address")
 			fs.StringVar(&opts.apiAdr, "api-adr", "http://127.0.0.1:8080/access", "teritori API address")
+			fs.StringVar(&opts.publickeyPath, "publickeyPath", "", "public key")
+			fs.StringVar(&opts.privatekeyPath, "privatekeyPath", "", "private key")
+			fs.BoolVar(&opts.generateKeys, "generate-keys", false, "generate keys")
 		},
 		Exec:      doRoot,
 		FFOptions: []ff.Option{ff.WithEnvVarPrefix(name)},
@@ -128,10 +140,30 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			return fmt.Errorf("db init: %w", err)
 		}
 
-		err = GenKeys("private.key", "public.key")
-		if err != nil {
-			return err
+		// key err handling
+		if opts.generateKeys {
+			err = GenKeys("private.key", "public.key")
+			if err != nil {
+				return err
+			}
+			opts.privatekeyPath = "private.key"
+			opts.publickeyPath = "public.key"
 		}
+
+		if opts.privatekeyPath == "" || opts.publickeyPath == "" {
+			return fmt.Errorf("missing --privatekeyPath or --publickeyPath: %w", flag.ErrHelp)
+		}
+
+		PrivateKey, err = ioutil.ReadFile(opts.privatekeyPath)
+		if err != nil {
+			return fmt.Errorf("read private key: %w", err)
+		}
+
+		PublicKey, err = ioutil.ReadFile(opts.publickeyPath)
+		if err != nil {
+			return fmt.Errorf("read public key: %w", err)
+		}
+		//
 
 		mutex := &sync.Mutex{}
 

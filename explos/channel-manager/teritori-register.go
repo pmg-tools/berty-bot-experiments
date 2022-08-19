@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
 	"strings"
 
 	"berty.tech/berty/v2/go/pkg/bertybot"
@@ -33,15 +32,10 @@ func step0(t teritoriData) (*teritoriData, error) {
 	}
 
 	// to modify
-	pubKey, err := os.ReadFile("public.key")
-	if err != nil {
-		return nil, err
-	}
-
 	nonce := rand.Int()
 	nonceStr := fmt.Sprintf("%d", nonce)
 	proof := fmt.Sprintf("%d%ssisi", nonce, t.Data.Pubkey)
-	sig := Sign((*[64]byte)(pubKey), []byte(proof))
+	sig := Sign((*[64]byte)(PublicKey), []byte(proof))
 	b64sig := base64.StdEncoding.EncodeToString(sig)
 	data := teritoriData{
 		Step: 1,
@@ -50,10 +44,8 @@ func step0(t teritoriData) (*teritoriData, error) {
 			Sig:   b64sig,
 		},
 	}
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(base64.StdEncoding.EncodeToString(Sign((*[64]byte)(pubKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data.Pubkey)))))
+
+	fmt.Println(base64.StdEncoding.EncodeToString(Sign((*[64]byte)(PublicKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data.Pubkey)))))
 	return &data, nil
 }
 
@@ -62,17 +54,12 @@ func step2(d database, t teritoriData) (*teritoriData, error) {
 		return nil, errors.New("missing arg")
 	}
 
-	privKey, err := os.ReadFile("private.key")
-	if err != nil {
-		return nil, err
-	}
-
 	prevSig, err := base64.StdEncoding.DecodeString(t.Data.PrevSig)
 	if err != nil {
 		return nil, err
 	}
 
-	res, ok := Verify((*[32]byte)(privKey), prevSig)
+	res, ok := Verify((*[32]byte)(PrivateKey), prevSig)
 	fmt.Println(res)
 	if !ok || string(res) != t.Data.PrevNonce+t.Data.Pubkey+"sisi" {
 		return nil, errors.New("invalid previous signature")
