@@ -130,14 +130,11 @@ func (s sqlLite) ListUsers() ([]User, error) {
 }
 
 func (s sqlLite) ListChannels(workspaceName string) ([]string, error) {
-	var channels []Channel
-	s.db.
-		Joins("JOIN workspaces ON workspaces.id = channels.wid").
-		Where("workspaces.name = ?", workspaceName).
-		Find(&channels)
+	var workspace Workspace
+	s.db.Where("name = ?", workspaceName).Preload("Channels").First(&workspace)
 
 	var channelIDs []string
-	for _, channel := range channels {
+	for _, channel := range workspace.Channels {
 		channelIDs = append(channelIDs, channel.Name)
 	}
 
@@ -145,16 +142,13 @@ func (s sqlLite) ListChannels(workspaceName string) ([]string, error) {
 }
 
 func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []string) []Channel {
-	var channels []Channel
-	s.db.
-		Joins("JOIN workspaces ON workspaces.id = channels.wid").
-		Where("workspaces.name = ? AND channels.name IN (?)", workspaceName, channelsName).
-		Find(&channels)
+	var workspace Workspace
+	s.db.Where("name = ?", workspaceName).Preload("Channels").First(&workspace)
 
 	newChannel := false
 	createChannel := true
 	for _, v := range channelsName {
-		for _, w := range channels {
+		for _, w := range workspace.Channels {
 			if v == w.Name {
 				createChannel = false
 				break
@@ -174,11 +168,8 @@ func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []stri
 	}
 
 	if newChannel == true {
-		s.db.
-			Joins("JOIN workspaces ON workspaces.id = channels.wid").
-			Where("workspaces.name = ? AND channels.name IN (?)", workspaceName, channelsName).
-			Find(&channels)
+		s.db.Where("name = ?", workspaceName).Preload("Channels").First(&workspace)
 	}
 
-	return channels
+	return workspace.Channels
 }
