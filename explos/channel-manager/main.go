@@ -64,8 +64,8 @@ func mainRun(args []string) error {
 			fs.BoolVar(&opts.Debug, "debug", false, "debug mode")
 			fs.StringVar(&opts.BertyNodeAddr, "berty-node-addr", "127.0.0.1:9091", "Berty node address")
 			fs.StringVar(&opts.apiAdr, "api-adr", "http://127.0.0.1:8080/access", "teritori API address")
-			fs.StringVar(&opts.publickeyPath, "publickeyPath", "", "public key")
-			fs.StringVar(&opts.privatekeyPath, "privatekeyPath", "", "private key")
+			fs.StringVar(&opts.publickeyPath, "publicKeyPath", "", "public key")
+			fs.StringVar(&opts.privatekeyPath, "privateKeyPath", "", "private key")
 			fs.BoolVar(&opts.generateKeys, "generate-keys", false, "generate keys")
 		},
 		Exec:      doRoot,
@@ -206,6 +206,14 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 			// AUTH COMMANDS
 			bertybot.WithCommand("link-teritori-account", "auth", TeritoriAuth(dbA)),
 			//
+			bertybot.WithCommand("clear", "clear", func(ctx bertybot.Context) {
+				if ctx.IsReplay || !ctx.IsNew {
+					return
+				}
+				for i := 0; i < 40; i++ {
+					_ = ctx.ReplyString("\n")
+				}
+			}),
 
 			bertybot.WithMessengerClient(client),
 		)

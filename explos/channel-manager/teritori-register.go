@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -9,6 +11,7 @@ import (
 	"strings"
 
 	"berty.tech/berty/v2/go/pkg/bertybot"
+	"github.com/Doozers/ETH-Signature/ethsign"
 )
 
 type metaData struct {
@@ -18,11 +21,11 @@ type metaData struct {
 	Sig       string `json:"sig,omitempty"`
 	Nonce     string `json:"nonce,omitempty"`
 	Message   string `json:"message,omitempty"`
+	HashType  string `json:"hash_type,omitempty"`
 }
 
 type teritoriData struct {
 	Step int `json:"step"`
-	//Data map[string]string `json:"data"`
 	Data metaData
 }
 
@@ -35,7 +38,8 @@ func step0(t teritoriData) (*teritoriData, error) {
 	nonce := rand.Int()
 	nonceStr := fmt.Sprintf("%d", nonce)
 	proof := fmt.Sprintf("%d%ssisi", nonce, t.Data.Pubkey)
-	sig := Sign((*[64]byte)(PublicKey), []byte(proof))
+	hash := sha256.Sum256([]byte(proof))
+	sig := Sign((*[64]byte)(PublicKey), hash[:])
 	b64sig := base64.StdEncoding.EncodeToString(sig)
 	data := teritoriData{
 		Step: 1,
@@ -45,12 +49,12 @@ func step0(t teritoriData) (*teritoriData, error) {
 		},
 	}
 
-	fmt.Println(base64.StdEncoding.EncodeToString(Sign((*[64]byte)(PublicKey), []byte(fmt.Sprintf("%d%ssisi", nonce, t.Data.Pubkey)))))
+	fmt.Println(data)
 	return &data, nil
 }
 
 func step2(d database, t teritoriData) (*teritoriData, error) {
-	if t.Data.PrevNonce == "" || t.Data.PrevSig == "" || t.Data.Pubkey == "" || t.Data.Sig == "" {
+	if t.Data.PrevNonce == "" || t.Data.PrevSig == "" || t.Data.Pubkey == "" || t.Data.Sig == "" || t.Data.HashType == "" {
 		return nil, errors.New("missing arg")
 	}
 
@@ -60,27 +64,40 @@ func step2(d database, t teritoriData) (*teritoriData, error) {
 	}
 
 	res, ok := Verify((*[32]byte)(PrivateKey), prevSig)
-	fmt.Println(res)
-	if !ok || string(res) != t.Data.PrevNonce+t.Data.Pubkey+"sisi" {
+
+	hash32 := sha256.Sum256([]byte(fmt.Sprintf("%d%ssisi", t.Data.PrevNonce, t.Data.Pubkey+"sisi")))
+	hash := hash32[:]
+	if !ok || bytes.Equal(res, hash) {
 		return nil, errors.New("invalid previous signature")
 	}
 
+	hash32_2 := sha256.Sum256([]byte(t.Data.PrevNonce + t.Data.PrevSig))
+	hash2 := hash32_2[:]
+
+	switch t.Data.HashType {
+	case "text":
+		ok, err = ethsign.Verify(fmt.Sprintf("%x", hash2), t.Data.Sig, t.Data.Pubkey, ethsign.TextHash)
+	case "keccak256":
+		ok, err = ethsign.Verify(fmt.Sprintf("%x", hash2), t.Data.Sig, t.Data.Pubkey, ethsign.Keccak256)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	var data teritoriData
-	if /* verify signature */ true {
+	if /* verify signature */ ok {
 		data = teritoriData{
 			Step: 3,
 			Data: metaData{
 				Message: "sync accepted",
 			},
 		}
-		if err != nil {
-			return nil, err
-		}
 
 		err = d.SyncTeritoriKey(t.Data.Pubkey, "bertyPubkey")
 		if err != nil {
 			return nil, err
 		}
+	} else {
 		data = teritoriData{
 			Step: 3,
 			Data: metaData{
@@ -88,6 +105,7 @@ func step2(d database, t teritoriData) (*teritoriData, error) {
 			},
 		}
 	}
+
 	return &data, nil
 }
 
@@ -108,18 +126,15 @@ func TeritoriAuth(d database) func(ctx bertybot.Context) {
 
 		case 2:
 			res, err = step2(d, t)
-			if err != nil {
-				return
-			}
 
 		default:
 			err = errors.New("error: unknown step")
 		}
-
 		if err != nil {
 			ctx.ReplyString("error: " + err.Error())
 			return
 		}
+
 		a, err := json.Marshal(res)
 		if err != nil {
 			ctx.ReplyString("error: " + err.Error())
