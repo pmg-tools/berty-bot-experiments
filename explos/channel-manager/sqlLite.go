@@ -29,14 +29,15 @@ func NewSqliteDB() (*sqlLite, error) {
 type Workspace struct {
 	ID       uint `gorm:"primary_key"`
 	Name     string
-	Channels []Channel `gorm:"ForeignKey:Wid"`
+	Channels []Channel
 }
 
 type Channel struct {
-	ID        uint `gorm:"primary_key"`
-	BertyLink string
-	Name      string
-	Wid       uint
+	ID          uint `gorm:"primary_key"`
+	BertyLink   string
+	Name        string
+	WorkspaceID uint
+	Workspace   *Workspace
 }
 
 type TeritoriKey struct {
@@ -88,9 +89,9 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 
 	var channel Channel
 	tx = db.Where(&Channel{
-		Name:      channelName,
-		BertyLink: bertyGroupLink,
-		Wid:       workspace.ID,
+		Name:        channelName,
+		BertyLink:   bertyGroupLink,
+		WorkspaceID: workspace.ID,
 	}).FirstOrCreate(&channel)
 	if tx.Error != nil {
 		return tx.Error
@@ -143,8 +144,7 @@ func (s sqlLite) ListChannels(workspaceName string) ([]string, error) {
 
 func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []string) []Channel {
 	var workspace Workspace
-	s.db.Where("name = ?", workspaceName).Preload("Channels").First(&workspace)
-
+	s.db.Where("name = ?", workspaceName).Preload("Channels", "name in (?)", channelsName).First(&workspace)
 	newChannel := false
 	createChannel := true
 	for _, v := range channelsName {
@@ -168,7 +168,7 @@ func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []stri
 	}
 
 	if newChannel == true {
-		s.db.Where("name = ?", workspaceName).Preload("Channels").First(&workspace)
+		s.db.Where("name = ?", workspaceName).Preload("Channels", "name in (?)", channelsName).First(&workspace)
 	}
 
 	return workspace.Channels
