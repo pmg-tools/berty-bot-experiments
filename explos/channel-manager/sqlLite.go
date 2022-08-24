@@ -52,6 +52,7 @@ type User struct {
 	TerritoriPubKey []TeritoriKey `gorm:"ForeignKey:UserId"`
 }
 
+// AddUser to database if it doesn't exist
 func (s sqlLite) AddUser(bertyPubKey string) error {
 	db := s.db
 	tx := db.FirstOrCreate(&User{
@@ -81,7 +82,7 @@ func (s sqlLite) SyncTeritoriKey(teritoriPubkey string, bertyPubkey string) erro
 	return nil
 }
 
-// AddChannel to database if it did not already exist
+// AddChannel to database if it doesn't exist
 func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroupLink string) error {
 	db := s.db
 
@@ -101,7 +102,7 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 	return nil
 }
 
-// AddWorkspace to database if it did not already exist
+// AddWorkspace to database if it doesn't exist
 func (s sqlLite) AddWorkspace(workspaceName string) error {
 	db := s.db
 	var workspace Workspace
