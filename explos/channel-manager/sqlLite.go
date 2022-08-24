@@ -81,6 +81,7 @@ func (s sqlLite) SyncTeritoriKey(teritoriPubkey string, bertyPubkey string) erro
 	return nil
 }
 
+// AddChannel to database if it did not already exist
 func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroupLink string) error {
 	db := s.db
 
@@ -100,6 +101,7 @@ func (s sqlLite) AddChannel(workspaceName string, channelName string, bertyGroup
 	return nil
 }
 
+// AddWorkspace to database if it did not already exist
 func (s sqlLite) AddWorkspace(workspaceName string) error {
 	db := s.db
 	var workspace Workspace
@@ -111,6 +113,7 @@ func (s sqlLite) AddWorkspace(workspaceName string) error {
 	return nil
 }
 
+// ListWorkspaces return all channels
 func (s sqlLite) ListWorkspaces() ([]string, error) {
 	var workspaces []Workspace
 	_ = s.db.Find(&workspaces)
@@ -123,6 +126,7 @@ func (s sqlLite) ListWorkspaces() ([]string, error) {
 	return workspaceIDs, nil
 }
 
+// ListUsers return all users
 func (s sqlLite) ListUsers() ([]User, error) {
 	var users []User
 	_ = s.db.Find(&users)
@@ -130,6 +134,7 @@ func (s sqlLite) ListUsers() ([]User, error) {
 	return users, nil
 }
 
+// ListChannels return all channels of a workspace
 func (s sqlLite) ListChannels(workspaceName string) ([]string, error) {
 	var workspace Workspace
 	s.db.Where("name = ?", workspaceName).Preload("Channels").First(&workspace)
@@ -142,9 +147,11 @@ func (s sqlLite) ListChannels(workspaceName string) ([]string, error) {
 	return channelIDs, nil
 }
 
+// GetChannelsInvitation get a list of channels in a workspace and return their invitation links
 func (s sqlLite) GetChannelsInvitation(workspaceName string, channelsName []string) []Channel {
 	var workspace Workspace
 	s.db.Where("name = ?", workspaceName).Preload("Channels", "name in (?)", channelsName).First(&workspace)
+
 	newChannel := false
 	createChannel := true
 	for _, v := range channelsName {
