@@ -135,7 +135,7 @@ func doRoot(ctx context.Context, args []string) error { // nolint:gocognit
 	// berty bot
 	g.Add(func() error {
 		// var dbA = &mockDb{}
-		dbA, err := NewSqliteDB()
+		dbA, err := NewSqliteDB("test.db")
 		if err != nil {
 			return fmt.Errorf("db init: %w", err)
 		}

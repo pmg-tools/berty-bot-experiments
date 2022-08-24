@@ -11,8 +11,8 @@ type sqlLite struct {
 	db *gorm.DB
 }
 
-func NewSqliteDB() (*sqlLite, error) {
-	db, err := gorm.Open(sqlite.Open("test.db"))
+func NewSqliteDB(databaseName string) (*sqlLite, error) {
+	db, err := gorm.Open(sqlite.Open(databaseName))
 	if err != nil {
 		return nil, err
 	}
