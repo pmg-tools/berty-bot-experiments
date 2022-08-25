@@ -47,9 +47,9 @@ type TeritoriKey struct {
 }
 
 type User struct {
-	ID              uint `gorm:"primary_key"`
-	BertyPubKey     string
-	TerritoriPubKey []TeritoriKey `gorm:"ForeignKey:UserId"`
+	ID             uint `gorm:"primary_key"`
+	BertyPubKey    string
+	TeritoriPubKey []TeritoriKey `gorm:"ForeignKey:UserId"`
 }
 
 // AddUser to database if it doesn't exist
