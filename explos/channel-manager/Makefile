@@ -12,6 +12,9 @@ mini:
 install: tidy fmt
 	go install .
 
+test:
+	go test -v
+
 # utilities
 tidy:; go mod tidy
 fmt:;  gofumpt -w .
